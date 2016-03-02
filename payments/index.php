@@ -4,13 +4,6 @@
 $cfg = include __DIR__.'/boot.php';
 
 try {
-
-    $product = new \OtpSimple\Product;
-    $product->name = 'Test #1';
-    $product->code = 'sku_000000';
-    $product->price = 24000;
-    //$product->qty = 2;
-
     $tx = new \OtpSimple\Transaction\LiveUpdate($cfg);
     $tx['automode'] = '1';
     $tx['order_ref'] = '18822613371456920420';
@@ -18,15 +11,16 @@ try {
     $tx['language'] = \OtpSimple\Enum\Language::HU;
     $tx['order_shipping'] = 20;
     $tx['discount'] = 30;
-    $tx['bill_fname'] = 'Foo';
-    $tx['bill_lname'] = 'Bar';
-    $tx['bill_email'] = 'foo@bar.em';
+    $tx['bill_fname'] = 'Payment';
+    $tx['bill_lname'] = 'Tester';
+    $tx['bill_email'] = 'payment@tester.hu';
     $tx['bill_phone'] = '00/0000000';
     $tx['bill_countrycode'] = 'HU';
-    $tx['bill_state'] = 'N/A';
-    $tx['bill_city'] = 'N/A';
-    $tx['bill_address'] = 'N/A';
-    $tx['bill_zipcode'] = '0000';
+    $tx['bill_state'] = 'State';
+    $tx['bill_city'] = 'City';
+    $tx['bill_address'] = 'First line address';
+    $tx['bill_zipcode'] = '1234';
+    $tx['order_timeout'] = 300;
     $tx['timeout_url'] = $cfg->getUrlTimeout().'?order_ref='.$tx['order_ref'];
     $tx['back_ref'] = $cfg->getUrlBack().'?order_ref='.$tx['order_ref'];
     $tx->addProduct(new \OtpSimple\Product([

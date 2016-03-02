@@ -15,15 +15,16 @@ class LiveUpdateTest extends \PHPUnit_Framework_TestCase
         $lu['language'] = \OtpSimple\Enum\Language::HU;
         $lu['order_shipping'] = 20;
         $lu['discount'] = 30;
-        $lu['bill_fname'] = 'Foo';
-        $lu['bill_lname'] = 'Bar';
-        $lu['bill_email'] = 'foo@bar.em';
+        $lu['bill_fname'] = 'Payment';
+        $lu['bill_lname'] = 'Tester';
+        $lu['bill_email'] = 'payment@tester.hu';
         $lu['bill_phone'] = '00/0000000';
         $lu['bill_countrycode'] = 'HU';
-        $lu['bill_state'] = 'N/A';
-        $lu['bill_city'] = 'N/A';
-        $lu['bill_address'] = 'N/A';
-        $lu['bill_zipcode'] = '0000';
+        $lu['bill_state'] = 'State';
+        $lu['bill_city'] = 'City';
+        $lu['bill_address'] = 'First line address';
+        $lu['bill_zipcode'] = '1234';
+        $lu['order_timeout'] = 300;
         $lu['timeout_url'] = $config->getUrlTimeout().'?order_ref='.$lu['order_ref'];
         $lu['back_ref'] = $config->getUrlBack().'?order_ref='.$lu['order_ref'];
         $lu->addProduct(new \OtpSimple\Product([

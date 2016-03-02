@@ -6,17 +6,15 @@ use ArrayAccess;
 
 /**
  * @property string $name
- * @property string $group
  * @property string $code
  * @property string $info
  * @property float $price
  * @property float $qty
  * @property float $vat
- * @property string $ver
  */
 class Product implements ArrayAccess
 {
-    protected static $_keys = ['name','group','code','info','price','qty','vat','ver'];
+    protected static $_keys = ['name','code','info','price','qty','vat'];
 
     protected $_name;
     protected $_group = '01';

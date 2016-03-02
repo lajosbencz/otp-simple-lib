@@ -34,13 +34,13 @@ class LiveUpdate extends Transaction
 
             //product
             'order_pname' => ['length'=>155, 'type' => 'array', 'required' => true, 'hash'=>true],
-            'order_pgroup' => ['length'=>155, 'type' => 'array', 'default' => '01', 'required'=>true],
+            'order_pgroup' => ['length'=>155, 'type' => 'array'],
             'order_pcode' => ['length'=>20, 'type' => 'array', 'required' => true, 'hash'=>true],
             'order_pinfo' => ['length'=>155, 'type' => 'array', 'default' => '', 'required'=>true, 'hash'=>true],
             'order_qty' => ['length'=>155, 'type' => 'array', 'default' => 1, 'required' => true, 'hash'=>true],
             'order_price' => ['length'=>20, 'type' => 'array', 'required' => true, 'hash'=>true],
             'order_vat' => ['length'=>2, 'type' => 'array', 'default' => '0', 'required' => true, 'hash'=>true],
-            'order_ver' => ['length'=>155, 'type' => 'array', 'default' => '01', 'required' => true],
+            'order_ver' => ['length'=>155, 'type' => 'array'],
 
             //billing
             'bill_fname' => ['length'=>155, 'type' => 'simple', 'required' => true],
@@ -130,13 +130,11 @@ class LiveUpdate extends Transaction
             $this->_data['order_qty'][$index]+= $product->qty;
         } else {
             $this->_data['order_pname'][] = $product->name;
-            $this->_data['order_pgroup'][] = $product->group;
             $this->_data['order_pcode'][] = $product->code;
             $this->_data['order_pinfo'][] = $product->info;
             $this->_data['order_qty'][] = $product->qty;
             $this->_data['order_price'][] = $product->price;
             $this->_data['order_vat'][] = $product->vat;
-            $this->_data['order_ver'][] = $product->ver;
         }
         return $this;
     }
