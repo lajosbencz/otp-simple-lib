@@ -1,0 +1,24 @@
+{
+    "name": "lajosbencz/otp-simple-lib",
+    "description": "PHP library for OTP Simple API",
+    "minimum-stability": "stable",
+    "license": "GPL3",
+    "authors": [
+        {
+            "name": "Lajos Bencz",
+            "email": "lazos@lazos.me"
+        }
+    ],
+    "require": {
+        "psr/log": "1.*",
+        "monolog/monolog": "1.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "5.2.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "OtpSimple\\": "src/"
+        }
+    }
+}

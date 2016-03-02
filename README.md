@@ -1,3 +1,3 @@
 # OTP Simple library
 
-PHP library for OTP Simple API
+Library for OTP Simple with PHP7 support
