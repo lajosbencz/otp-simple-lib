@@ -480,6 +480,9 @@ class Config implements ArrayAccess
         if($offset===null) {
             return $this->_server;
         }
+        if(!array_key_exists($offset, $this->_server)) {
+            return null;
+        }
         return $this->_server[$offset];
     }
 
@@ -490,6 +493,9 @@ class Config implements ArrayAccess
     public function getQuery($offset=null) {
         if($offset===null) {
             return $this->_query;
+        }
+        if(!array_key_exists($offset, $this->_query)) {
+            return null;
         }
         return $this->_query[$offset];
     }
@@ -502,6 +508,9 @@ class Config implements ArrayAccess
         if($offset===null) {
             return $this->_post;
         }
+        if(!array_key_exists($offset, $this->_post)) {
+            return null;
+        }
         return $this->_post[$offset];
     }
 
@@ -512,6 +521,9 @@ class Config implements ArrayAccess
     public function getRequest($offset=null) {
         if($offset===null) {
             return $this->_request;
+        }
+        if(!array_key_exists($offset, $this->_request)) {
+            return null;
         }
         return $this->_request[$offset];
     }
@@ -524,13 +536,14 @@ class Config implements ArrayAccess
         if(!$h) {
             $protocol = "http://";
             if(
-                (isset($this->_server['HTTP_FRONT_END_HTTPS']) && $this->_server['HTTP_FRONT_END_HTTPS'] == "On") ||
-                (!empty($this->_server['HTTPS']) && $this->_server['HTTPS'] !== 'off') ||
-                (!empty($this->_server['HTTP_X_FORWARDED_PROTO']) && $this->_server['HTTP_X_FORWARDED_PROTO'] == 'https' || !empty($this->_server['HTTP_X_FORWARDED_SSL']) && $this->_server['HTTP_X_FORWARDED_SSL'] == 'on')
+                ($this->getServer('HTTPS')!==null && $this->getServer('HTTPS') !== 'off') ||
+                strtolower($this->getServer('HTTP_FRONT_END_HTTPS')) == "on" ||
+                strtolower($this->getServer('HTTP_X_FORWARDED_PROTO')) == 'https' ||
+                strtolower($this->getServer('HTTP_X_FORWARDED_SSL')) == 'on'
             ) {
                 $protocol = "https://";
             }
-            $h = $protocol . $this->_server['HTTP_HOST'] . '/';
+            $h = $protocol . $this->getServer('HTTP_HOST') . '/';
         }
         return $h;
     }

@@ -6,7 +6,7 @@ class LiveUpdateTest extends \PHPUnit_Framework_TestCase
 {
     public function testOrderHash() {
         
-        $config = require dirname(__DIR__) . '/payments/config.php';
+        $config = require dirname(__DIR__) . '/demo/config.php';
 
         $lu = new \OtpSimple\Transaction\LiveUpdate($config);
         $lu['automode'] = '1';
