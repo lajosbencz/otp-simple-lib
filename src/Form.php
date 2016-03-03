@@ -17,7 +17,7 @@ class Form implements FormInterface
     {
         $config = &$this->_liveUpdate->config;
         if($config->isDebug()) {
-            return '<div class="form-group"><label class="">'.$name.'</label> <input type="text" class="form-control" name="'.strtoupper($name).'" value="'.$value.'" /></div>'."\r\n";
+            $this->_liveUpdate->log->debug($name.': '.$value);
         }
         return '<input type="hidden" name="'.strtoupper($name).'" value="'.$value.'" />'."\r\n";
     }

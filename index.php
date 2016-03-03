@@ -1,5 +1,5 @@
 <?php
 
-header('Location: /payments/');
+header('Location: /demo/');
 exit;
 

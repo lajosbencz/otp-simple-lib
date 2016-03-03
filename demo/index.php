@@ -1,13 +1,15 @@
 <?php
 
 
+/** @var \OtpSimple\Config $cfg */
 $cfg = include __DIR__.'/boot.php';
 
 try {
     $tx = new \OtpSimple\Transaction\LiveUpdate($cfg);
     $tx['automode'] = '1';
-    $tx['order_ref'] = '18822613371456920420';
-    $tx['order_date'] = '2016-03-02 13:07:00';
+    $tx['pay_method'] = \OtpSimple\Enum\Method::AUTOMODE;
+    $tx['order_ref'] = md5(microtime(true).rand());
+    $tx['order_date'] = date('Y-m-d H:i:s');
     $tx['language'] = \OtpSimple\Enum\Language::HU;
     $tx['order_shipping'] = 20;
     $tx['discount'] = 30;
@@ -57,5 +59,5 @@ try {
     include 'footer.php';
 } catch(Exception $e) {
     echo '<pre>';
-    throw $e;
+    echo $e->getMessage();
 }

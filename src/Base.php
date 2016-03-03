@@ -2,6 +2,7 @@
 
 namespace OtpSimple;
 
+use OtpSimple\Logger\Html;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Monolog\Logger;
@@ -23,14 +24,6 @@ abstract class Base implements LoggerAwareInterface
     /** @var LoggerInterface */
     protected $_logger;
 
-    public function getVersion() {
-        static $v;
-        if(!$v) {
-            $v = self::VERSION_MAJOR.'.'.self::VERSION_MINOR.'.'.self::VERSION_REVISION.'.'.self::VERSION_BUILD;
-        }
-        return $v;
-    }
-
     /**
      * @param Config $config
      */
@@ -38,8 +31,16 @@ abstract class Base implements LoggerAwareInterface
     {
         $this->_config = $config;
         $this->_logger = new Logger('otp-simple',[
-            new StreamHandler('php://output')
+            new Html,
         ]);
+    }
+
+    public function getVersion() {
+        static $v;
+        if(!$v) {
+            $v = self::VERSION_MAJOR.'.'.self::VERSION_MINOR.'.'.self::VERSION_REVISION.'.'.self::VERSION_BUILD;
+        }
+        return $v;
     }
 
     public function getConfig($name=null) {

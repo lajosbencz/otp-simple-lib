@@ -20,6 +20,6 @@ function dump($var) {
 
 /** @var \OtpSimple\Config $config */
 $config = include __DIR__ . '/config.php';
-$config->setUrlTimeout('http'.($_SERVER['HTTPS']?'s':'').'://'.$_SERVER['SERVER_NAME'].'/payments/timeout.php');
-$config->setUrlBack('http'.($_SERVER['HTTPS']?'s':'').'://'.$_SERVER['SERVER_NAME'].'/payments/back.php');
+$config->setUrlTimeout('demo/timeout.php');
+$config->setUrlBack('demo/back.php');
 return $config;

@@ -4,6 +4,7 @@ namespace OtpSimple;
 
 use ArrayAccess;
 use InvalidArgumentException;
+use OtpSimple\Exception\FieldOverflowException;
 
 abstract class Transaction extends Base implements ArrayAccess
 {
@@ -18,15 +19,74 @@ abstract class Transaction extends Base implements ArrayAccess
     abstract protected function _getFields();
 
     /**
-     * @param array $data
-     * @return array
+     * @param Config $config
      */
-    abstract protected function _nameData($data=[]);
-
     public function __construct(Config $config)
     {
         parent::__construct($config);
         $this->setDefaults();
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $value
+     */
+    public function __set($name, $value)
+    {
+        $this->setField($name, $value);
+    }
+
+    /**
+     * @param string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        $value = parent::__get($name);
+        if($value === null) {
+            $value = $this->getField($name);
+        }
+        return $value;
+    }
+
+    /**
+     * @param string $offset
+     * @return mixed
+     */
+    public function offsetExists($offset)
+    {
+        return array_key_exists($offset, $this->_data);
+    }
+
+    /**
+     * @param string $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->getField($offset);
+    }
+
+    /**
+     * @param string $offset
+     * @param mixed $value
+     * @throws FieldOverflowException
+     */
+    public function offsetSet($offset, $value)
+    {
+        $l = $this->getFieldLength($offset);
+        if($l > 0 && strlen($value) > $l) {
+            throw new FieldOverflowException('Field '.$offset.' value is longer than '.$l);
+        }
+        $this->setField($offset, $value);
+    }
+
+    /**
+     * @param string $offset
+     */
+    public function offsetUnset($offset)
+    {
+        $this->setField($offset, '');
     }
 
     /**
@@ -71,14 +131,6 @@ abstract class Transaction extends Base implements ArrayAccess
      * @param string $name
      * @return bool
      */
-    public function isFieldHash($name) {
-        return $this->describeField($name, 'hash') ? true : false;
-    }
-
-    /**
-     * @param string $name
-     * @return bool
-     */
     public function isFieldRequired($name) {
         return $this->describeField($name, 'required') ? true : false;
     }
@@ -99,6 +151,10 @@ abstract class Transaction extends Base implements ArrayAccess
         return $this->describeField($name, 'type') == 'array';
     }
 
+    /**
+     * @param $name
+     * @return int
+     */
     public function getFieldLength($name) {
         return $this->describeField($name, 'length');
     }
@@ -109,14 +165,6 @@ abstract class Transaction extends Base implements ArrayAccess
      */
     public function getFieldDefault($name) {
         return $this->describeField($name, 'default');
-    }
-
-    /**
-     * @param string $name
-     * @return string
-     */
-    public function getFieldRename($name) {
-        return $this->describeField($name, 'rename');
     }
 
     /**
@@ -131,23 +179,7 @@ abstract class Transaction extends Base implements ArrayAccess
     }
 
     /**
-     * @return array
-     */
-    public function getHashFields() {
-        static $fields;
-        if(!$fields) {
-            $fields = [];
-            foreach($this->_getFields() as $k=>$v) {
-                if(array_key_exists('hash', $v) && $v['hash']) {
-                    $fields[] = $k;
-                }
-            }
-        }
-        return $fields;
-    }
-
-    /**
-     * @param string|array $names
+     * @param array $names (optional)
      * @return $this
      */
     public function setDefaults($names=null)
@@ -173,7 +205,7 @@ abstract class Transaction extends Base implements ArrayAccess
      * @param array $allow (optional)
      * @return $this
      */
-    public function setFields(array $data, array $allow=[]) {
+    public function setFields(array $data, array $allow=null) {
         $this->_data = [];
         return $this->mergeFields($data, $allow);
     }
@@ -183,10 +215,13 @@ abstract class Transaction extends Base implements ArrayAccess
      * @param array $allow (optional)
      * @return $this
      */
-    public function mergeFields(array $data, array $allow=[]) {
-        $a = count($allow)>0;
+    public function mergeFields(array $data, array $allow=null) {
+        if(!is_array($allow) || count($allow)<1) {
+            $allow = $this->getValidFields();
+        }
         foreach($data as $k=>$v) {
-            if($a && !in_array($k, $allow)) {
+            $k = strtolower($k);
+            if(!in_array($k, $allow)) {
                 continue;
             }
             $this->setField($k,$v);
@@ -200,10 +235,13 @@ abstract class Transaction extends Base implements ArrayAccess
      * @return $this
      */
     public function setField($name, $value) {
+        $name = strtolower($name);
         if(!$this->isFieldValid($name)) {
             throw new InvalidArgumentException('Invalid field name: '.$name);
         }
-        $value = str_replace(["'","\\","\""],'',$value);
+        if(is_string($value)) {
+            $value = str_replace(["'", "\\", "\""], '', $value);
+        }
         $this->_data[$name] = $value;
         return $this;
     }
@@ -219,80 +257,36 @@ abstract class Transaction extends Base implements ArrayAccess
         return $this->_data[$name];
     }
 
+    /**
+     * @return bool
+     */
     public function checkRequired()
     {
         $this->_missing = [];
         foreach($this->_getFields() as $field => $params) {
-            if(array_key_exists('required',$params) && $params['required']) {
+            if(array_key_exists('required', $params) && $params['required']) {
                 if(!array_key_exists($field, $this->_data) || !isset($this->_data[$field])) {
                     $this->_missing[$field] = $field . ($this->isFieldArray($field)?'[]':'');
                 }
             }
         }
         $this->_missing = array_values($this->_missing);
-        return count($this->_missing)==0;
+        return count($this->_missing)<1;
     }
 
+    /**
+     * @return array
+     */
     public function getMissing()
     {
         return $this->_missing;
     }
 
+    /**
+     * @return array
+     */
     public function getData() {
         return $this->_data;
-    }
-
-    public function processResponse($resp)
-    {
-        preg_match_all('/<EPAYMENT>(.*?)<\/EPAYMENT>/', $resp, $matches);
-        $data = explode("|", $matches[1][0]);
-        return $this->_nameData($data);
-    }
-
-    public function checkResponseHash($resp=[])
-    {
-        $hash = $resp['ORDER_HASH'];
-        array_pop($resp);
-        $calculated = $this->config->getMerchant()->hash($resp);
-        if($hash == $calculated) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * @param string $offset
-     * @return mixed
-     */
-    public function offsetExists($offset)
-    {
-        return $this->isFieldValid($offset);
-    }
-
-    /**
-     * @param string $offset
-     * @return mixed
-     */
-    public function offsetGet($offset)
-    {
-        return $this->getField($offset);
-    }
-
-    /**
-     * @param string $offset
-     * @param mixed $value
-     */
-    public function offsetSet($offset, $value)
-    {
-        $this->setField($offset, $value);
-    }
-
-    /**
-     * @param string $offset
-     */
-    public function offsetUnset($offset)
-    {
-        $this->setField($offset, '');
     }
 
 }

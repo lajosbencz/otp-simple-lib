@@ -1,11 +1,12 @@
 
 ## PhpStorm
-.idea/
+/.idea/
 
 ## Composer
-composer.phar
-composer.lock
-vendor/
+/composer.phar
+/composer.lock
+/vendor/
 
 ## Project
 */config.php
+/log/
