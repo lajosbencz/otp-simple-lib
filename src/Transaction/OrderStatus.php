@@ -44,7 +44,6 @@ class OrderStatus extends Transaction
     }
 
     public function send() {
-
         $iosCounter = 0;
         $result = null;
         while ($iosCounter < $this->_max_run) {
