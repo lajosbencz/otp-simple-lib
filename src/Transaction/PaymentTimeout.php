@@ -26,7 +26,7 @@ class PaymentTimeout extends Transaction
     public function __construct(Config $config)
     {
         parent::__construct($config);
-        $this->setFields(self::renameFields($this->getFieldsMap(true), $this->config->getQuery()));
+        $this->_data = self::renameFields($this->getFieldsMap(), $this->config->getQuery(),false);
     }
 
 }

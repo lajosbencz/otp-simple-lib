@@ -11,7 +11,7 @@ abstract class RequestAbstract implements RequestInterface, ArrayAccess
 
     public function setUrl($url, array $query=[]) {
         if(count($query)>0) {
-            $query.= '?'.http_build_query($query, '', '&');
+            $query = '?'.http_build_query($query, '', '&');
         } else {
             $query = '';
         }

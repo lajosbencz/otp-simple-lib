@@ -19,7 +19,7 @@ class Form implements FormInterface
         if($config->isDebug()) {
             $this->_liveUpdate->log->debug($name.': '.$value);
         }
-        return '<input type="hidden" name="'.strtoupper($name).'" value="'.$value.'" />'."\r\n";
+        return '<input type="hidden" name="'.$name.'" value="'.$value.'" />'."\r\n";
     }
 
     public function setId($id) {

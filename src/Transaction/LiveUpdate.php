@@ -137,7 +137,7 @@ class LiveUpdate extends Transaction
         parent::__set($name, $value);
         if(substr($name,0,5)=='bill_') {
             $name = 'delivery_'.substr($name, 5);
-            if($this->_isField($name) && $this->$name) {
+            if($this->_isField($name) && !isset($this->$name)) {
                 $this->$name = $value;
             }
         }
@@ -198,13 +198,12 @@ class LiveUpdate extends Transaction
     public function checkRequired()
     {
         $this->version = $this->getVersion();
-        $this->createHash();
+        $this->hash = $this->createHash();
         return parent::checkRequired();
     }
 
     public function createHash() {
-        $this->hash = $this->config->getMerchant()->hash($this->toArray(), $this->_getHashFields());
-        return $this;
+        return $this->config->getMerchant()->hash($this->toArray(), $this->_getHashFields());
     }
 
 

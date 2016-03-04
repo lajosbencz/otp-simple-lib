@@ -12,51 +12,20 @@ abstract class Transaction extends Base
 
     /** @var array */
     private $_missing = [];
-    /** @var array */
-    private $_renamed = [];
 
     /**
      * @param array $map
      * @param array $old
+     * @param bool $swap (optional)
      * @return array
      */
-    public static function renameFields(array &$map, array &$old) {
+    public static function renameFields(array $map, array &$old, $swap=false) {
         $new = [];
-        $idx = true;
-        foreach($old as $ok=>&$mv) {
-            if(!is_int($ok)) {
-                $idx = false;
-                break;
-            }
+        if($swap) {
+            $map = array_flip($map);
         }
-        if($idx) {
-            foreach($old as $i=>&$ov) {
-                $new[$i] = self::renameFields($map[0], $ov);
-            }
-        } else {
-            foreach($old as $ok=>$ov) {
-                if(array_key_exists($ok, $map)) {
-                    $mv = $map[$ok];
-                    if(is_array($mv)) {
-                        if(is_array($ov)) {
-                            if(count($mv) == 1) {
-                                $k = array_keys($mv);
-                                $k = $k[0];
-                                $v = $mv[$k];
-                                if (is_array($v)) {
-                                    $new[$k] = self::renameFields($v, $ov);
-                                    continue;
-                                }
-                            }
-                            throw new InvalidArgumentException('Invalid $map');
-                        }
-                    } else {
-                        $new[(string)$mv] = $ov;
-                    }
-                } else {
-                    $new[$ok] = $ov;
-                }
-            }
+        foreach($map as $to=>$from) {
+            $new[$to] = $old[$from];
         }
         return $new;
     }
@@ -81,7 +50,7 @@ abstract class Transaction extends Base
         if($l > 0 && is_string($value) && strlen($value) > $l) {
             throw new FieldOverflowException('Field '.$name.' maximum length is '.$l);
         }
-        $this->$name = $value;
+        parent::__set($name, $value);
     }
 
     /**
@@ -116,40 +85,14 @@ abstract class Transaction extends Base
         return $this->_describeField($name, 'default');
     }
 
-    public function getFieldsMap($reverse=false) {
+    public function getFieldsMap() {
         $map = [];
         foreach($this->_describeFields()?:[] as $k=>$v) {
             if(array_key_exists('name', $v)) {
-                if($reverse) {
-                    $map[$v['name']] = $k;
-                } else {
-                    $map[$k] = $v['name'];
-                }
+                $map[$k] = $v['name'];
             }
         }
         return $map;
-    }
-
-    /**
-     * @param array $names (optional)
-     * @return $this
-     */
-    public function setDefaults($names=[])
-    {
-        if(!is_array($names) || count($names)<1) {
-            $names = $this->_getFields();
-        }
-        foreach($names as $name) {
-            if($this->isFieldArray($name)) {
-                continue;
-            }
-            $def = $this->getFieldDefault($name);
-            if($def===null) {
-                continue;
-            }
-            $this->$name = $def;
-        }
-        return $this;
     }
 
     /**
@@ -160,7 +103,7 @@ abstract class Transaction extends Base
         $this->_missing = [];
         foreach($this->_describeFields() as $name => $params) {
             if(array_key_exists('required', $params) && $params['required']) {
-                if(!$this->$name) {
+                if(!$this->__isset($name)) {
                     $this->_missing[$name] = $name . ($this->isFieldArray($name)?'[]':'');
                 }
             }
@@ -181,11 +124,10 @@ abstract class Transaction extends Base
      * @return array
      */
     public function getData() {
-        $r = [];
-        foreach($this->_getFields() as $f) {
-            $r[$f] = $this->$f;
+        if(static::$_reverseMap) {
+            return $this->_data;
         }
-        return self::renameFields($this->getFieldsMap(static::$_reverseMap), $r);
+        return self::renameFields($this->getFieldsMap(), $this->_data, true);
     }
 
 }

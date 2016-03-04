@@ -22,18 +22,6 @@ class PaymentRedirect extends Transaction
 
     protected function _describeFields()
     {
-        // TODO: Implement _describeFields() method.
-    }
-
-
-    public function __construct(Config $config)
-    {
-        parent::__construct($config);
-        $this->setFields(self::renameFields($this->getFieldsMap(true), $this->config->getQuery()));
-    }
-
-    public function describeFields()
-    {
         return [
             'date' => ['name'=>'date', 'type' => 'scalar'],
             'order_id' => ['name'=>'order_ref', 'type' => 'scalar'],
@@ -44,9 +32,16 @@ class PaymentRedirect extends Transaction
         ];
     }
 
+
+    public function __construct(Config $config)
+    {
+        parent::__construct($config);
+        $this->_data = self::renameFields($this->getFieldsMap(), $this->config->getQuery(), false);
+    }
+
     public function checkCtrl()
     {
-        $url = $this->_config->getHostName().substr($this->config->getServer('REQUEST_URI'),1);
+        $url = $this->config->getHostName().substr($this->config->getServer('REQUEST_URI'),1);
         $url = substr($url, 0, -38); //the last 38 characters are the CTRL param
         $hash = $this->config->getMerchant()->hash([$url]);
         if($this->config->getQuery('ctrl') == $hash) {
@@ -62,7 +57,7 @@ class PaymentRedirect extends Transaction
 
     protected function checkRtVariable()
     {
-        if(!$this->isFieldSet('text')) {
+        if(!$this->__isset('text')) {
             return false;
         }
         if($this->text == "No Response" || $this->text == "NR" || $this->code == '') {
@@ -89,10 +84,7 @@ class PaymentRedirect extends Transaction
             throw new Exception\LiveUpdateInvalidCtrlException("Invalid ctrl");
         }
         if(!$this->checkRtVariable()) {
-            if(!$throw) {
-                return false;
-            }
-            throw new Exception\LiveUpdateUnsuccessfulException("Unsuccessful response code: ".$this->getText());
+            return false;
         }
         return true;
     }

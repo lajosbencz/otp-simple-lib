@@ -42,20 +42,21 @@ abstract class Object
         return $this->_field[$name];
     }
 
-    protected  function _describeField($name, $attribute=null, $default=null) {
-        if(!$this->_isField($name)) {
-            throw new InvalidArgumentException('Invalid field name: '.$name);
+    protected  function _describeField($name, $attribute=null, $default=null)
+    {
+        if (!$this->_isField($name)) {
+            throw new InvalidArgumentException('Invalid field name: ' . $name);
         }
-        $f = $this->_describeFields()?:[];
-        if(!is_array($f[$name])) {
+        $f = $this->_describeFields() ?: [];
+        if (!is_array($f[$name])) {
             $f = [];
         } else {
             $f = $f[$name];
         }
-        if($attribute===null) {
+        if ($attribute === null) {
             return $f;
         }
-        if(array_key_exists($attribute, $f)) {
+        if (array_key_exists($attribute, $f)) {
             return $f[$attribute];
         }
         return $default;
@@ -79,6 +80,28 @@ abstract class Object
             $this->_getField[$name] = $this->_describeField($name, 'get', true);
         }
         return $this->_getField[$name];
+    }
+
+    /**
+     * @param array $names (optional)
+     * @return $this
+     */
+    public function setDefaults($names=[])
+    {
+        if(!is_array($names) || count($names)<1) {
+            $names = $this->_getFields();
+        }
+        foreach($names as $name) {
+            if($this->_describeField($name,'type') == 'array') {
+                continue;
+            }
+            $def = $this->_describeField($name, 'default', null);
+            if($def===null) {
+                continue;
+            }
+            $this->__set($name, $def);
+        }
+        return $this;
     }
 
     /**
@@ -144,14 +167,13 @@ abstract class Object
     public function toArray() {
         $array = [];
         foreach($this->_getFields() as $name) {
-            $v = $this->$name;
-            if($v===null) {
-                continue;
+            if($this->__isset($name) && is_a($this->$name, self::class)) {
+                $array[$name] = $this->$name->toArray();
+            } elseif(is_scalar($this->$name)) {
+                $array[$name] = $this->$name;
+            } else {
+                $array[$name] = (array)$this->$name;
             }
-            if(is_a($this->$name, self::class)) {
-                $v = $v->toArray();
-            }
-            $array[$name] = $v;
         }
         return $array;
     }

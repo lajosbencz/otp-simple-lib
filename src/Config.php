@@ -98,29 +98,29 @@ class Config extends Object
     protected function _describeFields()
     {
         return [
-            'sandbox' => ['type'=>'scalar'],
-            'debug' => ['type'=>'scalar'],
-            'server' => ['type'=>'scalar'],
-            'query' => ['type'=>'scalar'],
-            'post' => ['type'=>'scalar'],
-            'request' => ['type'=>'scalar'],
-            'timeout' => ['type'=>'scalar'],
-            'currency' => ['type'=>'scalar'],
-            'language' => ['type'=>'scalar'],
-            'method' => ['type'=>'scalar'],
-            'url_live' => ['type'=>'scalar'],
-            'url_sandbox' => ['type'=>'scalar'],
-            'url_timeout' => ['type'=>'scalar'],
-            'url_redirect' => ['type'=>'scalar'],
-            'uri_lu' => ['type'=>'scalar'],
-            'uri_alu' => ['type'=>'scalar'],
-            'uri_idn' => ['type'=>'scalar'],
-            'uri_irn' => ['type'=>'scalar'],
-            'uri_ios' => ['type'=>'scalar'],
-            'uri_oc' => ['type'=>'scalar'],
-            'merchants' => ['array'],
-            'request_class' => ['type'=>'scalar'],
-            'form_class' => ['type'=>'scalar'],
+            'sandbox' => ['type'=>'scalar','required'=>true,'default'=>true],
+            'debug' => ['type'=>'scalar','required'=>true,'default'=>true],
+            'server' => ['type'=>'scalar','required'=>true,'default'=>$_SERVER],
+            'query' => ['type'=>'scalar','required'=>true,'default'=>$_GET],
+            'post' => ['type'=>'scalar','required'=>true,'default'=>$_POST],
+            'request' => ['type'=>'scalar','required'=>true,'default'=>$_REQUEST],
+            'timeout' => ['type'=>'scalar','required'=>true,'default'=>30],
+            'method' => ['type'=>'scalar','required'=>true,'default'=>Method::AUTOMODE],
+            'currency' => ['type'=>'scalar','required'=>true],
+            'language' => ['type'=>'scalar','required'=>true],
+            'url_live' => ['type'=>'scalar','required'=>true,'default'=>self::URL_LIVE],
+            'url_sandbox' => ['type'=>'scalar','required'=>true,'default'=>self::URL_SANDBOX],
+            'url_timeout' => ['type'=>'scalar','required'=>true],
+            'url_redirect' => ['type'=>'scalar','required'=>true],
+            'uri_lu' => ['type'=>'scalar','required'=>true,'default'=>self::URI_LU],
+            'uri_alu' => ['type'=>'scalar','required'=>true,'default'=>self::URI_ALU],
+            'uri_idn' => ['type'=>'scalar','required'=>true,'default'=>self::URI_IDN],
+            'uri_irn' => ['type'=>'scalar','required'=>true,'default'=>self::URI_IRN],
+            'uri_ios' => ['type'=>'scalar','required'=>true,'default'=>self::URI_IOS],
+            'uri_oc' => ['type'=>'scalar','required'=>true,'default'=>self::URI_OC],
+            'merchants' => ['array','required'=>true],
+            'request_class' => ['type'=>'scalar','required'=>true,'default'=>Curl::class],
+            'form_class' => ['type'=>'scalar','required'=>true,'default'=>Form::class],
         ];
     }
 
@@ -129,6 +129,7 @@ class Config extends Object
      */
     public function __construct($config=[])
     {
+        $this->setDefaults();
         if(is_a($config, self::class)) {
             $this->fromObject($config);
         } elseif(is_array($config)) {
@@ -136,27 +137,8 @@ class Config extends Object
         } elseif(is_string($config)) {
             $this->fromJson($config);
         }
-        if(!empty($_SERVER)) {
-            if($this->server === null) {
-                $this->server = $_SERVER;
-            }
-            if($this->query === null) {
-                $this->query = $_GET;
-            }
-            if($this->post === null) {
-                $this->post = $_POST;
-            }
-            if($this->request === null) {
-                $this->request = $_REQUEST;
-            }
-        }
     }
 
-    public function describeFields()
-    {
-        return [
-        ];
-    }
 
     #region Setters
     /**
@@ -680,14 +662,14 @@ class Config extends Object
      * @return string
      */
     public function getRequestClass() {
-        return $this->_requestClass;
+        return $this->request_class;
     }
 
     /**
      * @return string
      */
     public function getFormClass() {
-        return $this->_formClass;
+        return $this->form_class;
     }
     #endregion
 

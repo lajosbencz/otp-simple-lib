@@ -49,7 +49,6 @@ $cfg = include __DIR__.'/boot.php';
         'qty' => 1,
         'vat' => 0
     ]));
-    dump($lu->getData());exit;
     if(!$lu->checkRequired()) {
         dump('missing:',$lu->getMissing());
         exit;
