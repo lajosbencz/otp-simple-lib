@@ -72,7 +72,13 @@ class PaymentNotification extends Transaction
         "CASH",                 //CASH
     ];
 
-    protected function _getFields()
+    public function __construct(Config $config)
+    {
+        parent::__construct($config);
+        $this->mergeFields($this->config->getPost());
+    }
+
+    protected function _describeFields()
     {
         return [
             'saledate' => ['type'=>'simple'],
@@ -127,12 +133,6 @@ class PaymentNotification extends Transaction
             'ipn_date' => ['type'=>'simple'],
             'hash' => ['type'=>'simple'],
         ];
-    }
-
-    public function __construct(Config $config)
-    {
-        parent::__construct($config);
-        $this->mergeFields($this->config->getPost());
     }
 
     public function checkResponse($throw=true) {

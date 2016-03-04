@@ -2,13 +2,13 @@
 
 namespace OtpSimple;
 
-use ArrayAccess;
 use InvalidArgumentException;
 use OtpSimple\Enum\Currency;
 
-class Merchant implements ArrayAccess
+class Merchant extends Object
 {
-    private static $_keys = ['id', 'key', 'currency'];
+    /** @var Security */
+    private $_security;
 
     /** @var string */
     protected $_id = '';
@@ -17,14 +17,21 @@ class Merchant implements ArrayAccess
     /** @var string|Currency */
     protected $_currency = Currency::__default;
 
+    protected function _describeFields()
+    {
+        return [];
+    }
+
+
     /**
      * Merchant constructor.
+     * @param Currency|string $currency (optional)
      * @param string $id
      * @param string $key
-     * @param Currency|string $currency (optional)
      */
-    public function __construct($id, $key, $currency = Currency::__default)
+    public function __construct($currency, $id, $key)
     {
+        $this->_security = new Security($key);
         $this->_id = $id;
         $this->_key = $key;
         $currency = (string)$currency;
@@ -39,63 +46,42 @@ class Merchant implements ArrayAccess
         }
     }
 
-    public function hash(array $data) {
-        $hash = '';
-        foreach($data as $field) {
-            if(is_array($field)) {
-                //throw new Exception('No multi-dimensional array allowed!');
-                foreach($field as $v) {
-                    $v = stripslashes($v);
-                    $hash .= strlen($v) . $v;
-                }
-            } else {
-                $field = stripslashes($field);
-                $hash .= strlen($field) . $field;
-            }
-        }
-        return Security::hmac($this->_key, $hash);
+    public function describeFields()
+    {
+        return [
+            'id' => ['set'=>false],
+            'key' => ['set'=>false],
+            'currency' => ['set'=>false],
+        ];
     }
 
+    /**
+     * @return string
+     */
     public function getId() {
         return $this->_id;
     }
 
+    /**
+     * @return string
+     */
     public function getKey() {
         return $this->_key;
     }
 
+    /**
+     * @return Currency|string
+     */
     public function getCurrency() {
         return $this->_currency;
     }
 
-    public function offsetExists($offset)
-    {
-        return in_array($offset, self::$_keys);
-    }
-
-    public function offsetGet($offset)
-    {
-        if(!$this->offsetExists($offset)) {
-            throw new Exception('Invalid offset for merchant: '.$offset);
-        }
-        return $this->{'_'.$offset};
-    }
-
-    public function offsetSet($offset, $value)
-    {
-        throw new Exception('Merchant object is ready-only!');
-    }
-
-    public function offsetUnset($offset)
-    {
-        throw new Exception('Merchant object is ready-only!');
-    }
-
-    public function toArray() {
-        return [
-            'id' => $this->getId(),
-            'key' => $this->getKey(),
-            'currency' => $this->getCurrency(),
-        ];
+    /**
+     * @param string|array $data
+     * @param array $whiteList (optional)
+     * @return string
+     */
+    public function hash($data, array $whiteList=[]) {
+        return $this->_security->hash($data, $whiteList);
     }
 }

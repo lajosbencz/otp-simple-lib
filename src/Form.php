@@ -50,7 +50,7 @@ class Form implements FormInterface
                 $html.= $this->_createField($name, $field);
             }
         }
-        $html.= $this->_createField('SDK_VERSION', $this->_liveUpdate->getVersion());
+        //$html.= $this->_createField('SDK_VERSION', $this->_liveUpdate->getVersion());
         if($button) {
             $html.= $this->getButton(is_string($button)?$button:'Submit');
         }

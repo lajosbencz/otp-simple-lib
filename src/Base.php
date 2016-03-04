@@ -2,6 +2,7 @@
 
 namespace OtpSimple;
 
+use InvalidArgumentException;
 use OtpSimple\Logger\Html;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -12,27 +13,34 @@ use Monolog\Handler\StreamHandler;
  * @property Config $config
  * @property LoggerInterface $log
  */
-abstract class Base implements LoggerAwareInterface
+abstract class Base extends Object implements LoggerAwareInterface
 {
     const VERSION_MAJOR = 0;
     const VERSION_MINOR = 1;
     const VERSION_REVISION = 0;
     const VERSION_BUILD = 0;
 
-    /** @var Config */
-    protected $_config;
     /** @var LoggerInterface */
-    protected $_logger;
+    private $_log;
+    /** @var Config */
+    private $_config;
 
     /**
-     * @param Config $config
+     * @param array|Config $config
+     * @param LoggerInterface $logger (optional)
      */
-    public function __construct(Config $config)
+    public function __construct($config, LoggerInterface $logger=null)
     {
+        if(is_array($config)) {
+            $config = new Config($config);
+        }
+        if(!$logger) {
+            $logger = new Logger('otp-simple',[
+                new Html,
+            ]);
+        }
         $this->_config = $config;
-        $this->_logger = new Logger('otp-simple',[
-            new Html,
-        ]);
+        $this->setLogger($logger);
     }
 
     public function getVersion() {
@@ -47,34 +55,35 @@ abstract class Base implements LoggerAwareInterface
         if($name === null) {
             return $this->_config;
         }
-        if($this->_config->hasName($name)) {
-            return $this->_config->offsetGet($name);
+        if($this->_config->$name) {
+            return $this->_config->$name;
         }
         return null;
     }
 
     public function setLogger(LoggerInterface $logger)
     {
-        $this->_logger = $logger;
+        $this->_log = $logger;
         return $this;
-    }
-
-    /**
-     * @return LoggerInterface
-     */
-    public function getLogger() {
-        return $this->_logger;
     }
 
     public function __get($name)
     {
-        switch($name) {
-            case 'log':
-                return $this->getLogger();
-            case 'config':
-                return $this->getConfig();
+        if($name=='log') {
+            return $this->_log;
         }
-        return null;
+        if($name=='config') {
+            return $this->_config;
+        }
+        return parent::__get($name);
+    }
+
+    public function __set($name, $value)
+    {
+        if($name=='log' || $name=='config') {
+            throw new InvalidArgumentException('Read-only field: '.$name);
+        }
+        parent::__set($name, $value);
     }
 
 }

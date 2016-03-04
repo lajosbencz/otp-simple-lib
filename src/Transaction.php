@@ -6,17 +6,60 @@ use ArrayAccess;
 use InvalidArgumentException;
 use OtpSimple\Exception\FieldOverflowException;
 
-abstract class Transaction extends Base implements ArrayAccess
+abstract class Transaction extends Base
 {
+    protected static $_reverseMap = false;
+
     /** @var array */
-    protected $_missing = [];
+    private $_missing = [];
     /** @var array */
-    protected $_data = [];
+    private $_renamed = [];
 
     /**
+     * @param array $map
+     * @param array $old
      * @return array
      */
-    abstract protected function _getFields();
+    public static function renameFields(array &$map, array &$old) {
+        $new = [];
+        $idx = true;
+        foreach($old as $ok=>&$mv) {
+            if(!is_int($ok)) {
+                $idx = false;
+                break;
+            }
+        }
+        if($idx) {
+            foreach($old as $i=>&$ov) {
+                $new[$i] = self::renameFields($map[0], $ov);
+            }
+        } else {
+            foreach($old as $ok=>$ov) {
+                if(array_key_exists($ok, $map)) {
+                    $mv = $map[$ok];
+                    if(is_array($mv)) {
+                        if(is_array($ov)) {
+                            if(count($mv) == 1) {
+                                $k = array_keys($mv);
+                                $k = $k[0];
+                                $v = $mv[$k];
+                                if (is_array($v)) {
+                                    $new[$k] = self::renameFields($v, $ov);
+                                    continue;
+                                }
+                            }
+                            throw new InvalidArgumentException('Invalid $map');
+                        }
+                    } else {
+                        $new[(string)$mv] = $ov;
+                    }
+                } else {
+                    $new[$ok] = $ov;
+                }
+            }
+        }
+        return $new;
+    }
 
     /**
      * @param Config $config
@@ -30,101 +73,15 @@ abstract class Transaction extends Base implements ArrayAccess
     /**
      * @param string $name
      * @param mixed $value
+     * @throws FieldOverflowException
      */
     public function __set($name, $value)
     {
-        $this->setField($name, $value);
-    }
-
-    /**
-     * @param string $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        $value = parent::__get($name);
-        if($value === null) {
-            $value = $this->getField($name);
+        $l = $this->getFieldLength($name);
+        if($l > 0 && is_string($value) && strlen($value) > $l) {
+            throw new FieldOverflowException('Field '.$name.' maximum length is '.$l);
         }
-        return $value;
-    }
-
-    /**
-     * @param string $offset
-     * @return mixed
-     */
-    public function offsetExists($offset)
-    {
-        return array_key_exists($offset, $this->_data);
-    }
-
-    /**
-     * @param string $offset
-     * @return mixed
-     */
-    public function offsetGet($offset)
-    {
-        return $this->getField($offset);
-    }
-
-    /**
-     * @param string $offset
-     * @param mixed $value
-     * @throws FieldOverflowException
-     */
-    public function offsetSet($offset, $value)
-    {
-        $l = $this->getFieldLength($offset);
-        if($l > 0 && strlen($value) > $l) {
-            throw new FieldOverflowException('Field '.$offset.' value is longer than '.$l);
-        }
-        $this->setField($offset, $value);
-    }
-
-    /**
-     * @param string $offset
-     */
-    public function offsetUnset($offset)
-    {
-        $this->setField($offset, '');
-    }
-
-    /**
-     * @param string $name
-     * @param string $attribute (optional)
-     * @return array
-     */
-    public function describeField($name, $attribute=null) {
-        static $fields;
-        if(!$fields) {
-            $fields = $this->_getFields();
-        }
-        if($attribute === null) {
-            if(array_key_exists($name, $fields)) {
-                return $fields[$name];
-            }
-            return null;
-        }
-        if(!array_key_exists($name, $fields) || !array_key_exists($attribute, $fields[$name])) {
-            return null;
-        }
-        return $fields[$name][$attribute];
-    }
-
-    /**
-     * @param string $name
-     * @return bool
-     */
-    public function isFieldValid($name) {
-        return is_array($this->describeField($name));
-    }
-
-    /**
-     * @param string $name
-     * @return bool
-     */
-    public function isFieldSet($name) {
-        return isset($this->_data[$name]);
+        $this->$name = $value;
     }
 
     /**
@@ -132,15 +89,7 @@ abstract class Transaction extends Base implements ArrayAccess
      * @return bool
      */
     public function isFieldRequired($name) {
-        return $this->describeField($name, 'required') ? true : false;
-    }
-
-    /**
-     * @param string $name
-     * @return bool
-     */
-    public function isFieldSimple($name) {
-        return $this->describeField($name, 'type') == 'simple';
+        return $this->_describeField($name, 'required') ? true : false;
     }
 
     /**
@@ -148,7 +97,7 @@ abstract class Transaction extends Base implements ArrayAccess
      * @return bool
      */
     public function isFieldArray($name) {
-        return $this->describeField($name, 'type') == 'array';
+        return $this->_describeField($name, 'type') == 'array';
     }
 
     /**
@@ -156,7 +105,7 @@ abstract class Transaction extends Base implements ArrayAccess
      * @return int
      */
     public function getFieldLength($name) {
-        return $this->describeField($name, 'length');
+        return $this->_describeField($name, 'length');
     }
 
     /**
@@ -164,97 +113,43 @@ abstract class Transaction extends Base implements ArrayAccess
      * @return mixed
      */
     public function getFieldDefault($name) {
-        return $this->describeField($name, 'default');
+        return $this->_describeField($name, 'default');
     }
 
-    /**
-     * @return array
-     */
-    public function getValidFields() {
-        static $fields;
-        if(!$fields) {
-            $fields = array_keys($this->_getFields());
+    public function getFieldsMap($reverse=false) {
+        $map = [];
+        foreach($this->_describeFields()?:[] as $k=>$v) {
+            if(array_key_exists('name', $v)) {
+                if($reverse) {
+                    $map[$v['name']] = $k;
+                } else {
+                    $map[$k] = $v['name'];
+                }
+            }
         }
-        return $fields;
+        return $map;
     }
 
     /**
      * @param array $names (optional)
      * @return $this
      */
-    public function setDefaults($names=null)
+    public function setDefaults($names=[])
     {
-        if(!$names) {
-            $names = $this->getValidFields();
+        if(!is_array($names) || count($names)<1) {
+            $names = $this->_getFields();
         }
         foreach($names as $name) {
-            if(!$this->isFieldSimple($name)) {
+            if($this->isFieldArray($name)) {
                 continue;
             }
             $def = $this->getFieldDefault($name);
             if($def===null) {
                 continue;
             }
-            $this->offsetSet($name, $def);
+            $this->$name = $def;
         }
         return $this;
-    }
-
-    /**
-     * @param array $data
-     * @param array $allow (optional)
-     * @return $this
-     */
-    public function setFields(array $data, array $allow=null) {
-        $this->_data = [];
-        return $this->mergeFields($data, $allow);
-    }
-
-    /**
-     * @param array $data
-     * @param array $allow (optional)
-     * @return $this
-     */
-    public function mergeFields(array $data, array $allow=null) {
-        if(!is_array($allow) || count($allow)<1) {
-            $allow = $this->getValidFields();
-        }
-        foreach($data as $k=>$v) {
-            $k = strtolower($k);
-            if(!in_array($k, $allow)) {
-                continue;
-            }
-            $this->setField($k,$v);
-        }
-        return $this;
-    }
-
-    /**
-     * @param string $name
-     * @param mixed $value
-     * @return $this
-     */
-    public function setField($name, $value) {
-        $name = strtolower($name);
-        if(!$this->isFieldValid($name)) {
-            throw new InvalidArgumentException('Invalid field name: '.$name);
-        }
-        if(is_string($value)) {
-            $value = str_replace(["'", "\\", "\""], '', $value);
-        }
-        $this->_data[$name] = $value;
-        return $this;
-    }
-
-    /**
-     * @param string $name
-     * @return mixed
-     */
-    public function getField($name) {
-        if(!$this->isFieldValid($name)) {
-            throw new InvalidArgumentException('Invalid field name: '.$name);
-        }
-        return $this->_data[$name];
     }
 
     /**
@@ -263,10 +158,10 @@ abstract class Transaction extends Base implements ArrayAccess
     public function checkRequired()
     {
         $this->_missing = [];
-        foreach($this->_getFields() as $field => $params) {
+        foreach($this->_describeFields() as $name => $params) {
             if(array_key_exists('required', $params) && $params['required']) {
-                if(!array_key_exists($field, $this->_data) || !isset($this->_data[$field])) {
-                    $this->_missing[$field] = $field . ($this->isFieldArray($field)?'[]':'');
+                if(!$this->$name) {
+                    $this->_missing[$name] = $name . ($this->isFieldArray($name)?'[]':'');
                 }
             }
         }
@@ -286,7 +181,11 @@ abstract class Transaction extends Base implements ArrayAccess
      * @return array
      */
     public function getData() {
-        return $this->_data;
+        $r = [];
+        foreach($this->_getFields() as $f) {
+            $r[$f] = $this->$f;
+        }
+        return self::renameFields($this->getFieldsMap(static::$_reverseMap), $r);
     }
 
 }

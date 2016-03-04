@@ -2,26 +2,49 @@
 
 namespace OtpSimple;
 
-use InvalidArgumentException;
-use ArrayAccess;
 use OtpSimple\Request\Curl;
-use ReflectionClass;
-use ReflectionProperty;
 use OtpSimple\Enum\Currency;
 use OtpSimple\Enum\Language;
 use OtpSimple\Enum\Method;
 
-class Config implements ArrayAccess
+/**
+ * Class Config
+ * @package OtpSimple
+ * @property bool $sandbox
+ * @property bool $debug
+ * @property string $server
+ * @property string $query
+ * @property string $post
+ * @property string $request
+ * @property string $timeout
+ * @property string $currency
+ * @property string $language
+ * @property string $method
+ * @property string $url_live
+ * @property string $url_sandbox
+ * @property string $url_timeout
+ * @property string $url_redirect
+ * @property string $uri_lu
+ * @property string $uri_alu
+ * @property string $uri_idn
+ * @property string $uri_irn
+ * @property string $uri_ios
+ * @property string $uri_oc
+ * @property Merchant[] $merchants
+ * @property string $request_class
+ * @property string $form_class
+ */
+class Config extends Object
 {
     #region Constants
-    const URL_LIVE = 'https://secure.simplepay.hu/payment/';
-    const URL_SANDBOX = 'https://sandbox.simplepay.hu/payment/';
-    const URI_LU = 'order/lu.php';
-    const URI_ALU = 'order/alu.php';
-    const URI_IDN = 'order/idn.php';
-    const URI_IRN = 'order/irn.php';
-    const URI_IOS = 'order/ios.php';
-    const URI_OC = 'order/tokens/';
+    const URL_LIVE = 'https://secure.simplepay.hu/payment/order/';
+    const URL_SANDBOX = 'https://sandbox.simplepay.hu/payment/order/';
+    const URI_LU = 'lu.php';
+    const URI_ALU = 'alu.php';
+    const URI_IDN = 'idn.php';
+    const URI_IRN = 'irn.php';
+    const URI_IOS = 'ios.php';
+    const URI_OC = 'tokens/';
     #endregion
 
 
@@ -32,6 +55,11 @@ class Config implements ArrayAccess
      * @return string
      */
     protected static function _urlQuery($url, array $query=[]) {
+        parse_str(parse_url($url, PHP_URL_QUERY),$q);
+        if(is_array($q) && count($q)>0) {
+            $url = substr($url,0,strpos($url,'?'));
+        }
+        $query = array_merge($q, $query);
         if(count($query)>0) {
             $query = '?'.http_build_query($query);
         } else {
@@ -65,97 +93,42 @@ class Config implements ArrayAccess
         }
         return $underscore;
     }
+    #endregion
 
-    /**
-     * @return string[]
-     */
-    public static function listNames() {
-        static $names;
-        if(!$names) {
-            $ref = new ReflectionClass(self::class);
-            $names = array_map(function($item){
-                /** @var ReflectionProperty $item */
-                return substr($item->getName(),1);
-            },$ref->getProperties(ReflectionProperty::IS_PROTECTED));
-        }
-        return $names;
+    protected function _describeFields()
+    {
+        return [
+            'sandbox' => ['type'=>'scalar'],
+            'debug' => ['type'=>'scalar'],
+            'server' => ['type'=>'scalar'],
+            'query' => ['type'=>'scalar'],
+            'post' => ['type'=>'scalar'],
+            'request' => ['type'=>'scalar'],
+            'timeout' => ['type'=>'scalar'],
+            'currency' => ['type'=>'scalar'],
+            'language' => ['type'=>'scalar'],
+            'method' => ['type'=>'scalar'],
+            'url_live' => ['type'=>'scalar'],
+            'url_sandbox' => ['type'=>'scalar'],
+            'url_timeout' => ['type'=>'scalar'],
+            'url_redirect' => ['type'=>'scalar'],
+            'uri_lu' => ['type'=>'scalar'],
+            'uri_alu' => ['type'=>'scalar'],
+            'uri_idn' => ['type'=>'scalar'],
+            'uri_irn' => ['type'=>'scalar'],
+            'uri_ios' => ['type'=>'scalar'],
+            'uri_oc' => ['type'=>'scalar'],
+            'merchants' => ['array'],
+            'request_class' => ['type'=>'scalar'],
+            'form_class' => ['type'=>'scalar'],
+        ];
     }
-
-    /**
-     * @param string $offset
-     * @return bool
-     */
-    public static function hasName($offset) {
-        $offset = self::camelcase($offset);
-        return in_array($offset, self::listNames());
-    }
-    #endregion
-
-    #region Private Properties
-    /** @var array */
-    private $_queryBase = [];
-    #endregion
-
-    #region Protected Properties
-    /** @var array */
-    protected $_server = [];
-    /** @var array */
-    protected $_query = [];
-    /** @var array */
-    protected $_post = [];
-    /** @var array */
-    protected $_request = [];
-    /** @var int */
-    protected $_timeout = 60;
-    /** @var bool */
-    protected $_sandbox = true;
-    /** @var bool */
-    protected $_debug = false;
-    /** @var string */
-    protected $_urlLive = self::URL_LIVE;
-    /** @var string */
-    protected $_urlSandbox = self::URL_SANDBOX;
-    /** @var string */
-    protected $_urlBase = 'order/';
-    /** @var string */
-    protected $_urlTimeout = 'timeout.php';
-    /** @var string */
-    protected $_urlBack = 'back.php';
-    /** @var string */
-    protected $_urlLu = 'lu.php';
-    /** @var string */
-    protected $_urlAlu = 'alu.php';
-    /** @var string */
-    protected $_urlIdn = 'idn.php';
-    /** @var string */
-    protected $_urlIrn = 'irn.php';
-    /** @var string */
-    protected $_urlIos = 'ios.php';
-    /** @var string */
-    protected $_urlOc = 'tokens/';
-    /** @var Merchant[] */
-    protected $_merchants = [];
-    /** @var string */
-    protected $_currency = Currency::__default;
-    /** @var string */
-    protected $_language = Language::__default;
-    /** @var string */
-    protected $_method = Method::__default;
-    /** @var string */
-    protected $_requestClass = Curl::class;
-    /** @var string */
-    protected $_formClass = Form::class;
-    #endregion
 
     /**
      * @param self|array|string $config (optional)
      */
     public function __construct($config=[])
     {
-        $config['server'] = $_SERVER;
-        $config['query'] = $_GET;
-        $config['post'] = $_POST;
-        $config['request'] = $_REQUEST;
         if(is_a($config, self::class)) {
             $this->fromObject($config);
         } elseif(is_array($config)) {
@@ -163,34 +136,27 @@ class Config implements ArrayAccess
         } elseif(is_string($config)) {
             $this->fromJson($config);
         }
-    }
-
-    #region ArrayAccess
-    public function offsetExists($offset)
-    {
-        return self::hasName($offset);
-    }
-
-    public function offsetGet($offset)
-    {
-        if(!$this->offsetExists($offset)) {
-            return null;
+        if(!empty($_SERVER)) {
+            if($this->server === null) {
+                $this->server = $_SERVER;
+            }
+            if($this->query === null) {
+                $this->query = $_GET;
+            }
+            if($this->post === null) {
+                $this->post = $_POST;
+            }
+            if($this->request === null) {
+                $this->request = $_REQUEST;
+            }
         }
-        $offset = self::camelcase($offset);
-        return $this->{'get'.ucfirst($offset)}();
     }
 
-    public function offsetSet($offset, $value)
+    public function describeFields()
     {
-        $offset = self::camelcase($offset);
-        $this->{'set'.ucfirst($offset)}($value);
+        return [
+        ];
     }
-
-    public function offsetUnset($offset)
-    {
-        $this->offsetSet($offset, null);
-    }
-    #endregion
 
     #region Setters
     /**
@@ -198,7 +164,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setServer(array $data) {
-        $this->_server = $data;
+        $this->server = $data;
         return $this;
     }
 
@@ -207,7 +173,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setQuery(array $data) {
-        $this->_query = $data;
+        $this->query = $data;
         return $this;
     }
 
@@ -216,7 +182,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setPost(array $data) {
-        $this->_post = $data;
+        $this->post = $data;
         return $this;
     }
 
@@ -225,7 +191,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setRequest(array $data) {
-        $this->_request = $data;
+        $this->request = $data;
         return $this;
     }
 
@@ -235,17 +201,7 @@ class Config implements ArrayAccess
      */
     public function setSandbox($sandbox)
     {
-        $this->_sandbox = $sandbox;
-        return $this;
-    }
-
-    /**
-     * @param int $timeout
-     * @return $this
-     */
-    public function setTimeout($timeout)
-    {
-        $this->_timeout = $timeout;
+        $this->sandbox = $sandbox;
         return $this;
     }
 
@@ -255,7 +211,17 @@ class Config implements ArrayAccess
      */
     public function setDebug($debug)
     {
-        $this->_debug = $debug;
+        $this->debug = $debug;
+        return $this;
+    }
+
+    /**
+     * @param int $timeout
+     * @return $this
+     */
+    public function setTimeout($timeout)
+    {
+        $this->timeout = $timeout;
         return $this;
     }
 
@@ -264,10 +230,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setCurrency($code) {
-        if(is_a($code, Currency::class)) {
-            $code = $code->__toString();
-        }
-        $this->_currency = $code;
+        $this->currency = (string)$code;
         return $this;
     }
 
@@ -276,10 +239,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setLanguage($code) {
-        if(is_a($code, Language::class)) {
-            $code = $code->__toString();
-        }
-        $this->_language = $code;
+        $this->language = (string)$code;
         return $this;
     }
 
@@ -288,10 +248,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setMethod($method) {
-        if(is_a($method, Method::class)) {
-            $method = $method->__toString();
-        }
-        $this->_method = $method;
+        $this->method = (string)$method;
         return $this;
     }
 
@@ -301,7 +258,7 @@ class Config implements ArrayAccess
      */
     public function setUrlLive($urlLive)
     {
-        $this->_urlLive = $urlLive;
+        $this->url_live = $urlLive;
         return $this;
     }
 
@@ -311,19 +268,7 @@ class Config implements ArrayAccess
      */
     public function setUrlSandbox($urlSandbox)
     {
-        $this->_urlSandbox = $urlSandbox;
-        return $this;
-    }
-
-    /**
-     * @param string $urlBase
-     * @param array $query (optional)
-     * @return $this
-     */
-    public function setUrlBase($urlBase, $query=[])
-    {
-        $this->_urlBase = $urlBase;
-        $this->_queryBase = $query;
+        $this->url_sandbox = $urlSandbox;
         return $this;
     }
 
@@ -334,83 +279,90 @@ class Config implements ArrayAccess
      */
     public function setUrlTimeout($urlTimeout, $query=[])
     {
-        $this->_urlTimeout = self::_urlQuery($urlTimeout,array_merge($this->_queryBase,$query));
+        $this->url_timeout = self::_urlQuery($urlTimeout, $query);
+        if(!preg_match('/^https?\:\/\//',$this->url_timeout)) {
+            $this->url_timeout = $this->getHostName().$this->url_timeout;
+        }
         return $this;
     }
 
     /**
-     * @param string $urlBack
+     * @param string $urlRedirect
      * @param array $query (optional)
      * @return $this
      */
-    public function setUrlBack($urlBack, $query=[])
+    public function setUrlRedirect($urlRedirect, $query=[])
     {
-        $this->_urlBack = self::_urlQuery($urlBack,array_merge($this->_queryBase,$query));
-        return $this;}
-
-    /**
-     * @param string $urlLu
-     * @param array $query (optional)
-     * @return $this
-     */
-    public function setUrlLu($urlLu, $query=[])
-    {
-        $this->_urlLu = self::_urlQuery($urlLu,array_merge($this->_queryBase,$query));
+        $this->url_redirect = self::_urlQuery($urlRedirect, $query);
+        if(!preg_match('/^https?\:\/\//',$this->url_redirect)) {
+            $this->url_redirect = $this->getHostName().$this->url_redirect;
+        }
         return $this;
     }
 
     /**
-     * @param string $urlAlu
+     * @param string $uriLu
      * @param array $query (optional)
      * @return $this
      */
-    public function setUrlAlu($urlAlu, $query=[])
+    public function setUriLu($uriLu, $query=[])
     {
-        $this->_urlAlu = self::_urlQuery($urlAlu,array_merge($this->_queryBase,$query));
+        $this->uri_lu = self::_urlQuery($uriLu, $query);
         return $this;
     }
 
     /**
-     * @param string $urlIdn
+     * @param string $uriAlu
      * @param array $query (optional)
      * @return $this
      */
-    public function setUrlIdn($urlIdn, $query=[])
+    public function setUriAlu($uriAlu, $query=[])
     {
-        $this->_urlIdn = self::_urlQuery($urlIdn,array_merge($this->_queryBase,$query));
+        $this->uri_alu = self::_urlQuery($uriAlu,$query);
         return $this;
     }
 
     /**
-     * @param string $urlIrn
+     * @param string $uriIdn
      * @param array $query (optional)
      * @return $this
      */
-    public function setUrlIrn($urlIrn, $query=[])
+    public function setUriIdn($uriIdn, $query=[])
     {
-        $this->_urlIrn = self::_urlQuery($urlIrn,array_merge($this->_queryBase,$query));
+        $this->uri_idn = self::_urlQuery($uriIdn,$query);
         return $this;
     }
 
     /**
-     * @param string $urlIos
+     * @param string $uriIrn
      * @param array $query (optional)
      * @return $this
      */
-    public function setUrlIos($urlIos, $query=[])
+    public function setUriIrn($uriIrn, $query=[])
     {
-        $this->_urlIos = self::_urlQuery($urlIos,array_merge($this->_queryBase,$query));
+        $this->uri_irn = self::_urlQuery($uriIrn,$query);
         return $this;
     }
 
     /**
-     * @param string $urlOc
+     * @param string $uriIos
      * @param array $query (optional)
      * @return $this
      */
-    public function setUrlOc($urlOc, $query=[])
+    public function setUriIos($uriIos, $query=[])
     {
-        $this->_urlOc = self::_urlQuery($urlOc,array_merge($this->_queryBase,$query));
+        $this->uri_ios = self::_urlQuery($uriIos,$query);
+        return $this;
+    }
+
+    /**
+     * @param string $uriOc
+     * @param array $query (optional)
+     * @return $this
+     */
+    public function setUriOc($uriOc, $query=[])
+    {
+        $this->uri_oc = self::_urlQuery($uriOc,$query);
         return $this;
     }
 
@@ -420,19 +372,19 @@ class Config implements ArrayAccess
      */
     public function setMerchants($merchants)
     {
-        $this->_merchants = [];
+        $this->merchants = [];
         foreach($merchants as $currency=>$merchant) {
             $currency = strtoupper($currency);
             if(is_array($merchant)) {
                 if(is_numeric($currency)) {
                     $currency = $merchant['currency'];
                 }
-                $merchant = new Merchant($merchant['id'],$merchant['key'],$currency);
+                $merchant = new Merchant($currency,$merchant['id'],$merchant['key']);
             }
             if(!is_a($merchant, Merchant::class)) {
                 continue;
             }
-            $this->_merchants[$currency] = $merchant;
+            $this->addMerchant($merchant->getCurrency(), $merchant->getId(), $merchant->getKey());
         }
         return $this;
     }
@@ -446,7 +398,7 @@ class Config implements ArrayAccess
     public function addMerchant($currency, $id, $key)
     {
         $currency = strtoupper($currency);
-        $this->_merchants[$currency] = new Merchant($id,$key,$currency);
+        $this->_data['merchants'][$currency] = new Merchant($currency,$id,$key);
         return $this;
     }
 
@@ -456,7 +408,7 @@ class Config implements ArrayAccess
      */
     public function setRequestClass($className)
     {
-        $this->_requestClass = $className;
+        $this->request_class = $className;
         return $this;
     }
 
@@ -465,7 +417,7 @@ class Config implements ArrayAccess
      * @return $this
      */
     public function setFormClass($className) {
-        $this->_formClass = $className;
+        $this->form_class = $className;
         return $this;
     }
 
@@ -478,12 +430,12 @@ class Config implements ArrayAccess
      */
     public function getServer($offset=null) {
         if($offset===null) {
-            return $this->_server;
+            return $this->server;
         }
-        if(!array_key_exists($offset, $this->_server)) {
+        if(!array_key_exists($offset, $this->server)) {
             return null;
         }
-        return $this->_server[$offset];
+        return $this->server[$offset];
     }
 
     /**
@@ -492,12 +444,12 @@ class Config implements ArrayAccess
      */
     public function getQuery($offset=null) {
         if($offset===null) {
-            return $this->_query;
+            return $this->query;
         }
-        if(!array_key_exists($offset, $this->_query)) {
+        if(!array_key_exists($offset, $this->query)) {
             return null;
         }
-        return $this->_query[$offset];
+        return $this->query[$offset];
     }
 
     /**
@@ -506,12 +458,12 @@ class Config implements ArrayAccess
      */
     public function getPost($offset=null) {
         if($offset===null) {
-            return $this->_post;
+            return $this->post;
         }
-        if(!array_key_exists($offset, $this->_post)) {
+        if(!array_key_exists($offset, $this->post)) {
             return null;
         }
-        return $this->_post[$offset];
+        return $this->post[$offset];
     }
 
     /**
@@ -520,12 +472,12 @@ class Config implements ArrayAccess
      */
     public function getRequest($offset=null) {
         if($offset===null) {
-            return $this->_request;
+            return $this->request;
         }
-        if(!array_key_exists($offset, $this->_request)) {
+        if(!array_key_exists($offset, $this->request)) {
             return null;
         }
-        return $this->_request[$offset];
+        return $this->request[$offset];
     }
 
     /**
@@ -553,7 +505,7 @@ class Config implements ArrayAccess
      */
     public function isSandbox()
     {
-        return $this->_sandbox;
+        return $this->sandbox ? true : false;
     }
 
     /**
@@ -561,7 +513,7 @@ class Config implements ArrayAccess
      */
     public function isDebug()
     {
-        return $this->_debug;
+        return $this->debug ? true : false;
     }
 
     /**
@@ -569,7 +521,7 @@ class Config implements ArrayAccess
      */
     public function getTimeout()
     {
-        return $this->_timeout;
+        return intval($this->timeout);
     }
 
     /**
@@ -577,7 +529,7 @@ class Config implements ArrayAccess
      */
     public function getCurrency()
     {
-        return $this->_currency;
+        return $this->currency;
     }
 
     /**
@@ -585,7 +537,7 @@ class Config implements ArrayAccess
      */
     public function getLanguage()
     {
-        return $this->_language;
+        return $this->language;
     }
 
     /**
@@ -593,7 +545,7 @@ class Config implements ArrayAccess
      */
     public function getMethod()
     {
-        return $this->_method;
+        return $this->method;
     }
 
     /**
@@ -601,7 +553,7 @@ class Config implements ArrayAccess
      */
     public function getUrlLive()
     {
-        return $this->_urlLive;
+        return $this->url_live;
     }
 
     /**
@@ -609,15 +561,7 @@ class Config implements ArrayAccess
      */
     public function getUrlSandbox()
     {
-        return $this->_urlSandbox;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUrlBase()
-    {
-        return ($this->isSandbox()?$this->_urlSandbox:$this->_urlLive).$this->_urlBase;
+        return $this->url_sandbox;
     }
 
     /**
@@ -625,63 +569,70 @@ class Config implements ArrayAccess
      */
     public function getUrlTimeout()
     {
-        return $this->getHostName().$this->_urlTimeout;
+        return $this->url_timeout;
     }
 
     /**
      * @return string
      */
-    public function getUrlBack()
+    public function getUrlRedirect()
     {
-        return $this->getHostName().$this->_urlBack;
+        return $this->url_redirect;
+    }
+
+    public function getUrlBase() {
+        if($this->isSandbox()) {
+            return $this->getUrlSandbox();
+        }
+        return $this->getUrlLive();
     }
 
     /**
      * @return string
      */
-    public function getUrlLu()
+    public function getUriLu()
     {
-        return $this->getUrlBase().$this->_urlLu;
+        return $this->getUrlBase().$this->uri_lu;
     }
 
     /**
      * @return string
      */
-    public function getUrlAlu()
+    public function getUriAlu()
     {
-        return $this->getUrlBase().$this->_urlAlu;
+        return $this->getUrlBase().$this->uri_alu;
     }
 
     /**
      * @return string
      */
-    public function getUrlIdn()
+    public function getUriIdn()
     {
-        return $this->getUrlBase().$this->_urlIdn;
+        return $this->getUrlBase().$this->uri_idn;
     }
 
     /**
      * @return string
      */
-    public function getUrlIrn()
+    public function getUriIrn()
     {
-        return $this->getUrlBase().$this->_urlIrn;
+        return $this->getUrlBase().$this->uri_irn;
     }
 
     /**
      * @return string
      */
-    public function getUrlIos()
+    public function getUriIos()
     {
-        return $this->getUrlBase().$this->_urlIos;
+        return $this->getUrlBase().$this->uri_ios;
     }
 
     /**
      * @return string
      */
-    public function getUrlOc()
+    public function getUriOc()
     {
-        return $this->getUrlBase().$this->_urlOc;
+        return $this->getUrlBase().$this->uri_oc;
     }
 
     /**
@@ -689,7 +640,7 @@ class Config implements ArrayAccess
      */
     public function getMerchants()
     {
-        return $this->_merchants;
+        return $this->merchants;
     }
 
     /**
@@ -718,9 +669,9 @@ class Config implements ArrayAccess
      * @return Merchant
      */
     public function getMerchantByCurrency($code) {
-        $code = (string)$code;
-        if(array_key_exists($code, $this->_merchants)) {
-            return $this->_merchants[$code];
+        $code = strtoupper((string)$code);
+        if(array_key_exists($code, $this->_data['merchants'])) {
+            return $this->merchants[$code];
         }
         return null;
     }
@@ -830,15 +781,6 @@ class Config implements ArrayAccess
     }
 
     /**
-     * @param string $urlBase
-     * @param array $query (optional)
-     * @return self
-     */
-    public function withUrlBase($urlBase, $query=[]) {
-        return (new self($this))->setUrlBase($urlBase, $query);
-    }
-
-    /**
      * @param string $urlTimeout
      * @param array $query (optional)
      * @return self
@@ -848,66 +790,66 @@ class Config implements ArrayAccess
     }
 
     /**
-     * @param string $urlBack
+     * @param string $urlRedirect
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlBack($urlBack, $query=[]) {
-        return (new self($this))->setUrlBack($urlBack, $query);
+    public function withUrlBack($urlRedirect, $query=[]) {
+        return (new self($this))->setUrlRedirect($urlRedirect, $query);
     }
 
     /**
-     * @param string $urlLu
+     * @param string $uriLu
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlLu($urlLu, $query=[]) {
-        return (new self($this))->setUrlLu($urlLu, $query);
+    public function withUriLu($uriLu, $query=[]) {
+        return (new self($this))->setUriLu($uriLu, $query);
     }
 
     /**
-     * @param string $urlAlu
+     * @param string $uriAlu
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlAlu($urlAlu, $query=[]) {
-        return (new self($this))->setUrlAlu($urlAlu, $query);
+    public function withUriAlu($uriAlu, $query=[]) {
+        return (new self($this))->setUriAlu($uriAlu, $query);
     }
 
     /**
-     * @param string $urlIdn
+     * @param string $uriIdn
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlIdn($urlIdn, $query=[]) {
-        return (new self($this))->setUrlIdn($urlIdn, $query);
+    public function withUriIdn($uriIdn, $query=[]) {
+        return (new self($this))->setUriIdn($uriIdn, $query);
     }
 
     /**
-     * @param string $urlIrn
+     * @param string $uriIrn
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlIrn($urlIrn, $query=[]) {
-        return (new self($this))->setUrlIrn($urlIrn, $query);
+    public function withUriIrn($uriIrn, $query=[]) {
+        return (new self($this))->setUriIrn($uriIrn, $query);
     }
 
     /**
-     * @param string $urlIos
+     * @param string $uriIos
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlIos($urlIos, $query=[]) {
-        return (new self($this))->setUrlIos($urlIos, $query);
+    public function withUriIos($uriIos, $query=[]) {
+        return (new self($this))->setUriIos($uriIos, $query);
     }
 
     /**
-     * @param string $urlOc
+     * @param string $uriOc
      * @param array $query (optional)
      * @return self
      */
-    public function withUrlOc($urlOc, $query=[]) {
-        return (new self($this))->setUrlOc($urlOc, $query);
+    public function withUriOc($uriOc, $query=[]) {
+        return (new self($this))->setUriOc($uriOc, $query);
     }
 
     /**
@@ -961,15 +903,15 @@ class Config implements ArrayAccess
      */
     public function fromArray(array $config) {
         foreach($config as $k=>$v) {
-            $k = self::camelcase($k);
+            $k = self::underscore($k);
             if($k=='merchants') {
                 foreach($v as $currency=>$merchant) {
-                    $this->addMerchant($currency,$merchant['id'], $merchant['key']);
+                    $this->addMerchant($currency, $merchant['id'], $merchant['key']);
                 }
                 continue;
             }
-            if(self::hasName($k)) {
-                $m = 'set'.ucfirst($k);
+            if($this->_isField($k)) {
+                $m = 'set'.ucfirst(self::camelcase($k));
                 $this->{$m}($v);
             } else {
                 throw new Exception('Invalid config name: '.$k);
@@ -977,6 +919,7 @@ class Config implements ArrayAccess
         }
         return $this;
     }
+
 
     /**
      * @param string $config
@@ -996,24 +939,6 @@ class Config implements ArrayAccess
     public function fromObject(self $config) {
         $this->fromArray($config->toArray());
         return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function toArray() {
-        $array = [];
-        foreach(self::listNames() as $name) {
-            $v = $this->{'_'.$name};
-            if($name == 'merchants') {
-                foreach($v as &$m) {
-                    /** @var Merchant $m */
-                    $m = $m->toArray();
-                }
-            }
-            $array[$name] = $v;
-        }
-        return $array;
     }
 
     /**

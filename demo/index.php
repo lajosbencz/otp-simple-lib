@@ -1,31 +1,31 @@
 <?php
 
 
-/** @var \OtpSimple\Config $cfg */
+/** @var OtpSimple\Config $cfg */
 $cfg = include __DIR__.'/boot.php';
 
-try {
-    $tx = new \OtpSimple\Transaction\LiveUpdate($cfg);
-    $tx['automode'] = '1';
-    $tx['pay_method'] = \OtpSimple\Enum\Method::AUTOMODE;
-    $tx['order_ref'] = md5(microtime(true).rand());
-    $tx['order_date'] = date('Y-m-d H:i:s');
-    $tx['language'] = \OtpSimple\Enum\Language::HU;
-    $tx['order_shipping'] = 20;
-    $tx['discount'] = 30;
-    $tx['bill_fname'] = 'Payment';
-    $tx['bill_lname'] = 'Tester';
-    $tx['bill_email'] = 'payment@tester.hu';
-    $tx['bill_phone'] = '00/0000000';
-    $tx['bill_countrycode'] = 'HU';
-    $tx['bill_state'] = 'State';
-    $tx['bill_city'] = 'City';
-    $tx['bill_address'] = 'First line address';
-    $tx['bill_zipcode'] = '1234';
-    $tx['order_timeout'] = 300;
-    $tx['timeout_url'] = $cfg->getUrlTimeout().'?order_ref='.$tx['order_ref'];
-    $tx['back_ref'] = $cfg->getUrlBack().'?order_ref='.$tx['order_ref'];
-    $tx->addProduct(new \OtpSimple\Product([
+//try {
+    $lu = new OtpSimple\Transaction\LiveUpdate($cfg);
+    $lu->automode = 1;
+    $lu->method = OtpSimple\Enum\Method::AUTOMODE;
+    $lu->order_id = md5(microtime(true).rand());
+    $lu->order_date = date('Y-m-d H:i:s');
+    $lu->language = OtpSimple\Enum\Language::HU;
+    $lu->shipping = 20;
+    $lu->discount = 30;
+    $lu->bill_first_name = 'Payment';
+    $lu->bill_last_name = 'Tester';
+    $lu->bill_email = 'payment@tester.hu';
+    $lu->bill_phone = '00/0000000';
+    $lu->bill_country_code = 'HU';
+    $lu->bill_state = 'State';
+    $lu->bill_city = 'City';
+    $lu->bill_address = 'First line address';
+    $lu->bill_zip_code = '1234';
+    $lu->timeout = 300;
+    $lu->timeout_url.= '?order_ref='.$lu->order_id;
+    $lu->redirect_url.= '?order_ref='.$lu->order_id;
+    $lu->addProduct(new OtpSimple\Product([
         'name' => 'Lorem 1',
         'code' => 'sku0001',
         'info' => 'Lorem ipsum dolor sit amet',
@@ -33,7 +33,7 @@ try {
         'qty' => 2,
         'vat' => 0
     ]));
-    $tx->addProduct(new \OtpSimple\Product([
+    $lu->addProduct(new OtpSimple\Product([
         'name' => 'Duis 2',
         'code' => 'sku0002',
         'info' => 'Duis aute (ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP)',
@@ -41,12 +41,21 @@ try {
         'qty' => 3,
         'vat' => 0
     ]));
-    if(!$tx->checkRequired()) {
-        dump($tx->getMissing());
+    $lu->addProduct(new OtpSimple\Product([
+        'name' => 'Duis 2',
+        'code' => 'sku0002',
+        'info' => 'Duis aute (ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP)',
+        'price' => '51',
+        'qty' => 1,
+        'vat' => 0
+    ]));
+    dump($lu->getData());exit;
+    if(!$lu->checkRequired()) {
+        dump('missing:',$lu->getMissing());
         exit;
     }
 
-    $form = $tx->createForm();
+    $form = $lu->createForm();
     $form->setId('otp_simple_'.md5(rand()));
 
     $title = 'OTP Simple Library for PHP';
@@ -57,7 +66,9 @@ try {
     echo $form->getButton('PAY', ['class' => 'btn btn-success btn-lg']);
 
     include 'footer.php';
+
+    /*
 } catch(Exception $e) {
     echo '<pre>';
-    echo $e->getMessage();
-}
+    throw $e;
+}*/

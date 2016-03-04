@@ -21,5 +21,5 @@ function dump($var) {
 /** @var \OtpSimple\Config $config */
 $config = include __DIR__ . '/config.php';
 $config->setUrlTimeout('demo/timeout.php');
-$config->setUrlBack('demo/back.php');
+$config->setUrlRedirect('demo/redirect.php');
 return $config;
