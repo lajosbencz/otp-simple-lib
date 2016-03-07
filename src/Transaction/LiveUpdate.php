@@ -144,12 +144,12 @@ class LiveUpdate extends Transaction
     }
 
     public function clearProducts() {
-        $this->product_name = [];
-        $this->product_code = [];
-        $this->product_info = [];
-        $this->product_qty = [];
-        $this->product_price = [];
-        $this->product_vat = [];
+        $this->_data['product_name'] = [];
+        $this->_data['product_code'] = [];
+        $this->_data['product_info'] = [];
+        $this->_data['product_qty'] = [];
+        $this->_data['product_price'] = [];
+        $this->_data['product_vat'] = [];
         return $this;
     }
 
@@ -179,7 +179,7 @@ class LiveUpdate extends Transaction
         if(!is_a($product, Product::class)) {
             throw new Exception\InvalidProductException('Invalid product, must be an array or instance of '.Product::class);
         }
-        if(!is_array($this->product_code)) {
+        if(!array_key_exists('product_code',$this->_data) || !is_array($this->_data['product_code'])) {
             $this->clearProducts();
         }
         if($this->hasProduct($product->code)) {
