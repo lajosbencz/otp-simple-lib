@@ -189,9 +189,9 @@ class LiveUpdate extends Transaction
             $this->_data['product_name'][] = $product->name;
             $this->_data['product_code'][] = $product->code;
             $this->_data['product_info'][] = $product->info;
-            $this->_data['product_qty'][] = $product->qty;
-            $this->_data['product_price'][] = $product->price;
-            $this->_data['product_vat'][] = $product->vat;
+            $this->_data['product_qty'][] = max(1,intval($product->qty));
+            $this->_data['product_price'][] = str_replace(',','.',(string)floatval($product->price));
+            $this->_data['product_vat'][] = str_replace(',','.',(string)floatval($product->vat));
         }
         return $this;
     }
