@@ -167,12 +167,14 @@ abstract class Object
     public function toArray() {
         $array = [];
         foreach($this->_getFields() as $name) {
-            if($this->__isset($name) && is_a($this->$name, self::class)) {
-                $array[$name] = $this->$name->toArray();
-            } elseif(is_scalar($this->$name)) {
-                $array[$name] = $this->$name;
-            } else {
-                $array[$name] = (array)$this->$name;
+            if($this->__isset($name)) {
+                if (is_a($this->$name, self::class)) {
+                    $array[$name] = $this->$name->toArray();
+                } elseif (is_array($this->$name)) {
+                    $array[$name] = (array)$this->$name;
+                } else {
+                    $array[$name] = (string)$this->$name;
+                }
             }
         }
         return $array;
