@@ -203,7 +203,7 @@ class Config extends Object
      */
     public function setTimeout($timeout)
     {
-        $this->timeout = $timeout;
+        $this->timeout = max(60,intval($timeout));
         return $this;
     }
 
