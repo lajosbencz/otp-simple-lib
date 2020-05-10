@@ -10,3 +10,7 @@
 ## Project
 */config.php
 /log/
+*.cache
+.env
+
+/src-v1/
