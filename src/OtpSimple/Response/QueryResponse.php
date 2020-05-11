@@ -47,8 +47,13 @@ class QueryResponse extends Response
         }
     }
 
-    public function getTransaction(string $orderRef): Transaction
+    public function getTransaction(string $orderRef = ''): Transaction
     {
+        if (!$orderRef) {
+            foreach ($this->_transactions as $tx) {
+                return $tx;
+            }
+        }
         if (!array_key_exists($orderRef, $this->_transactions)) {
             throw new \InvalidArgumentException('invalid orderRef');
         }
