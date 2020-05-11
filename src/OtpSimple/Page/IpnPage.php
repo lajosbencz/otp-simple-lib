@@ -17,6 +17,7 @@ class IpnPage extends Page
     public $paymentDate = '';
     public $transactionId = 0;
     public $status = '';
+    protected $_receiveDate;
 
     public function process(?string $jsonText = null, ?string $signature = null): self
     {
@@ -30,16 +31,27 @@ class IpnPage extends Page
         if ($signature !== $this->security->sign($jsonText)) {
             throw new Exception\VerifySignatureException;
         }
-        $this->log->debug('IPN received from bank', $this->toArray());
+        $this->_receiveDate = date('c');
+        $this->log->debug('IPN received', $this->toArray());
         return $this;
+    }
+
+    public function getResponseData(): array
+    {
+        $r = $this->toArray();
+        $r['receiveDate'] = $this->_receiveDate;
+        return $r;
+    }
+
+    public function getResponseBody(): string
+    {
+        return $this->security->serialize($this->getResponseData());
     }
 
     public function confirm(): void
     {
-        $r = $this->toArray();
-        $r['receiveDate'] = date('c');
-        $this->log->debug('IPN confirmed', $r);
         header('Content-Type: application/json; charset=utf-8');
-        echo $this->security->serialize($r);
+        echo $this->getResponseBody();
+        exit;
     }
 }
