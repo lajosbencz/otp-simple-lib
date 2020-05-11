@@ -1,6 +1,6 @@
 <?php
 
-namespace OtpSimple\Component\Page;
+namespace OtpSimple\Page;
 
 
 use OtpSimple\Exception;

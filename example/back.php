@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
-$backPage = new OtpSimple\Component\Page\RedirectPage($_GET);
+$backPage = new OtpSimple\Page\RedirectPage($_GET);
 
 include 'header.php';
 
