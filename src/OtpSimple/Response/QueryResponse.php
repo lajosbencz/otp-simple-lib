@@ -5,10 +5,14 @@ namespace OtpSimple\Response;
 
 use Generator;
 use OtpSimple\Entity\Transaction;
+use OtpSimple\Request;
 use OtpSimple\Response;
 
 class QueryResponse extends Response
 {
+    /**
+     * @var Transaction[]
+     */
     protected $_transactions = [];
 
     /**
@@ -24,7 +28,7 @@ class QueryResponse extends Response
         parent::process($data);
         $this->_transactions = [];
         foreach ($data['transactions'] as $tx) {
-            $this->_transactions[] = new Transaction($tx);
+            $this->_transactions[$tx['orderRef']] = new Transaction($tx);
         }
     }
 
@@ -41,6 +45,14 @@ class QueryResponse extends Response
         foreach ($this->_transactions as $tx) {
             yield $tx;
         }
+    }
+
+    public function getTransaction(string $orderRef): Transaction
+    {
+        if (!array_key_exists($orderRef, $this->_transactions)) {
+            throw new \InvalidArgumentException('invalid orderRef');
+        }
+        return $this->_transactions[$orderRef];
     }
 
 }
