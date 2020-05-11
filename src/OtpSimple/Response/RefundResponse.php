@@ -3,6 +3,7 @@
 namespace OtpSimple\Response;
 
 
+use OtpSimple\Request;
 use OtpSimple\Response;
 
 class RefundResponse extends Response
@@ -15,4 +16,12 @@ class RefundResponse extends Response
     public $refundTransactionId = '';
     public $refundTotal = 0.;
     public $remainingTotal = 0.;
+
+    /**
+     * @return Request\RefundRequest
+     */
+    public function getRequest(): Request
+    {
+        return parent::getRequest();
+    }
 }

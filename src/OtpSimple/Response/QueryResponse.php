@@ -11,6 +11,14 @@ class QueryResponse extends Response
 {
     protected $_transactions = [];
 
+    /**
+     * @return Request\QueryRequest
+     */
+    public function getRequest(): Request
+    {
+        return parent::getRequest();
+    }
+
     public function process(array $data): void
     {
         parent::process($data);

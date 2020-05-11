@@ -3,6 +3,7 @@
 namespace OtpSimple\Response;
 
 
+use OtpSimple\Request;
 use OtpSimple\Response;
 
 class StartResponse extends Response
@@ -15,4 +16,11 @@ class StartResponse extends Response
     public $timeout = '';
     public $total = 0.;
     public $paymentUrl = '';
+    /**
+     * @return Request\StartRequest
+     */
+    public function getRequest(): Request
+    {
+        return parent::getRequest();
+    }
 }
