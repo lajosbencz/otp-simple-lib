@@ -14,7 +14,7 @@ class RedirectPage extends Page
     public $merchant = '';
     public $orderRef = '';
 
-    public function __construct(?array $dataSource = null)
+    public function process(?array $dataSource = null): self
     {
         if (!$dataSource) {
             $dataSource = $_GET;
@@ -32,5 +32,7 @@ class RedirectPage extends Page
         $this->orderRef = $data['o'];
 
         $this->log->debug('returned from bank page', $this->toArray());
+
+        return $this;
     }
 }

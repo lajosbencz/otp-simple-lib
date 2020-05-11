@@ -18,7 +18,7 @@ class IpnPage extends Page
     public $transactionId = 0;
     public $status = '';
 
-    public function __construct(?string $jsonText = null, ?string $signature = null)
+    public function process(?string $jsonText = null, ?string $signature = null): self
     {
         if (!$jsonText) {
             $jsonText = file_get_contents("php://input");
@@ -31,6 +31,7 @@ class IpnPage extends Page
             throw new Exception\VerifySignatureException;
         }
         $this->log->debug('IPN received from bank', $this->toArray());
+        return $this;
     }
 
     public function confirm(): void

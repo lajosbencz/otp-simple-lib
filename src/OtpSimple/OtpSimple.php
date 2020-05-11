@@ -3,6 +3,8 @@
 namespace OtpSimple;
 
 
+use OtpSimple\Page\IpnPage;
+use OtpSimple\Page\RedirectPage;
 use OtpSimple\Request\FinishRequest;
 use OtpSimple\Request\QueryRequest;
 use OtpSimple\Request\RefundRequest;
@@ -62,5 +64,19 @@ class OtpSimple implements ContainerAwareInterface
         $req = new QueryRequest($this->getContainer());
         $req->addOrderRefs(...$orderRefs);
         return $req;
+    }
+
+    public function pageRedirect(?array $dataSource = null): RedirectPage
+    {
+        $page = new RedirectPage($this->getContainer());
+        $page->process($dataSource);
+        return $page;
+    }
+
+    public function pageIpn(?string $jsonText = null, ?string $signature = null): IpnPage
+    {
+        $page = new IpnPage($this->getContainer());
+        $page->process($jsonText, $signature);
+        return $page;
     }
 }
