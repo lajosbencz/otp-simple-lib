@@ -26,6 +26,7 @@ class IpnPage extends Page
         }
         if (!$signature) {
             $headers = Util::getServerRequestHeaders();
+            $this->log->debug('IPN headers', $headers);
             $signature = $headers['signature'];
         }
         $this->log->debug('processing IPN', ['raw' => $jsonText, 'signature' => $signature]);
