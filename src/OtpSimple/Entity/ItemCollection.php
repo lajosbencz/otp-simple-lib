@@ -43,4 +43,9 @@ class ItemCollection
         }
         return $sum;
     }
+
+    public function toArray(): array
+    {
+        return array_values($this->_items);
+    }
 }

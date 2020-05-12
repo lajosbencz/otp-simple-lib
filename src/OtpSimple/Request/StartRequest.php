@@ -118,9 +118,6 @@ class StartRequest extends Request
 
     public function getData(): array
     {
-        if ($this->items->count() > 0) {
-            $this->total = $this->items->sum();
-        }
         $data = array_merge(parent::getData(), [
             'currency' => $this->config->getMerchant()->currency,
             'timeout' => date("c", time() + $this->config->getRedirectTimeout()),
@@ -136,6 +133,9 @@ class StartRequest extends Request
             'maySelectInvoice' => $this->maySelectInvoice,
             'maySelectDelivery' => $this->maySelectDelivery,
         ]);
+        if ($this->items->count() > 0) {
+            $data['items'] = $this->items->toArray();
+        }
         if ($this->invoice->name) {
             $data['invoice'] = Util::objectToArray($this->invoice);
         } else {
