@@ -20,18 +20,17 @@ class RedirectPage extends Page
             $dataSource = $_GET;
         }
         $json = base64_decode($dataSource['r']);
+        $data = $this->security->deserialize($json);
         $sig = $this->security->sign($json);
+        $this->log->debug('returned from bank page', ['data' => $data, 'signature' => $sig]);
         if ($sig !== $dataSource['s']) {
             throw new Exception\VerifySignatureException;
         }
-        $data = $this->security->deserialize($json);
         $this->responseCode = $data['r'];
         $this->transactionId = $data['t'];
         $this->event = $data['e'];
         $this->merchant = $data['m'];
         $this->orderRef = $data['o'];
-
-        $this->log->debug('returned from bank page', $this->toArray());
 
         return $this;
     }

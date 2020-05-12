@@ -28,6 +28,7 @@ class IpnPage extends Page
             $headers = Util::getServerRequestHeaders();
             $signature = $headers['signature'];
         }
+        $this->log->debug('processing IPN', ['raw' => $jsonText, 'signature' => $signature]);
         if ($signature !== $this->security->sign($jsonText)) {
             throw new Exception\VerifySignatureException;
         }
@@ -50,6 +51,7 @@ class IpnPage extends Page
 
     public function confirm(): void
     {
+        $this->log->debug('confirmed IPN', $this->getResponseData());
         header('Content-Type: application/json; charset=utf-8');
         echo $this->getResponseBody();
         exit;
