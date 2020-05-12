@@ -34,6 +34,7 @@ class IpnPage extends Page
             throw new Exception\VerifySignatureException;
         }
         $this->_receiveDate = date('c');
+        Util::copyFromArray($this, $this->security->deserialize($jsonText));
         $this->log->debug('IPN received', $this->toArray());
         return $this;
     }
