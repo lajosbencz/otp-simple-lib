@@ -53,9 +53,11 @@ class IpnPage extends Page
 
     public function confirm(): void
     {
-        $this->log->debug('confirmed IPN', $this->getResponseData());
+        $body = $this->getResponseBody();
         header('Content-Type: application/json; charset=utf-8');
-        echo $this->getResponseBody();
+        header('Signature: ' . $this->security->sign($body));
+        echo $body;
+        $this->log->debug('confirmed IPN', $this->getResponseData());
         exit;
     }
 }
