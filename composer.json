@@ -16,7 +16,7 @@
     "psr/log": "^1"
   },
   "require-dev": {
-    "monolog/monolog": "^1"
+    "monolog/monolog": "*"
   },
   "autoload": {
     "psr-4": {

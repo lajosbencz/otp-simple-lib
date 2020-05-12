@@ -5,6 +5,7 @@ namespace OtpSimple\Component;
 
 use OtpSimple\Component;
 use OtpSimple\Exception;
+use Phalcon\Http\Request;
 use RuntimeException;
 
 class Broker extends Component implements BrokerInterface
@@ -61,6 +62,7 @@ class Broker extends Component implements BrokerInterface
         if (!$raw) {
             throw new RuntimeException(curl_error($this->_curl), curl_errno($this->_curl));
         }
+
         list($headers, $body) = explode("\r\n\r\n", $raw, 2);
         $headers = explode("\r\n", $headers);
         $body = trim($body);
