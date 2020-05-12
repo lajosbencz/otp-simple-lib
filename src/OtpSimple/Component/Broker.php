@@ -62,11 +62,10 @@ class Broker extends Component implements BrokerInterface
             throw new RuntimeException(curl_error($this->_curl), curl_errno($this->_curl));
         }
         list($headers, $body) = explode("\r\n\r\n", $raw, 2);
+        $headers = explode("\r\n", $headers);
+        $body = trim($body);
 
         if (!$this->config->isSandbox()) {
-            $headers = explode("\r\n", $headers);
-//        array_shift($headers);
-//        array_shift($headers);
             array_map('trim', $headers);
             $sig = null;
             foreach ($headers as $header) {
@@ -77,7 +76,7 @@ class Broker extends Component implements BrokerInterface
             if (!$sig) {
                 throw new Exception\InvalidSignatureException;
             }
-            $sigCheck = $this->security->sign(trim($body));
+            $sigCheck = $this->security->sign($body);
             if ($sig !== $sigCheck) {
                 throw new Exception\VerifySignatureException;
             }
@@ -86,7 +85,7 @@ class Broker extends Component implements BrokerInterface
         try {
             $result = $this->security->deserialize($body);
         } catch (\Throwable $e) {
-            $this->log->error($e->getMessage(), ['body' => $body]);
+            $this->log->error($e->getMessage(), ['headers' => $headers, 'body' => $body]);
         }
 
         if (array_key_exists('errorCodes', $result)) {
