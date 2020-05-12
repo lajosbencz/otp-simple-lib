@@ -56,8 +56,6 @@ class Broker extends Component implements BrokerInterface
         $raw = curl_exec($this->_curl);
         $this->log->debug('request sent', [
             'url' => $url,
-            'hash' => $hash,
-            'data' => $data,
             'raw' => $raw,
         ]);
         if (!$raw) {
