@@ -63,6 +63,7 @@ class Broker extends Component implements BrokerInterface
             throw new RuntimeException(curl_error($this->_curl), curl_errno($this->_curl));
         }
 
+        $raw = trim(preg_replace("/^HTTP\/[\d\.]+\s+[\d]+\s+Continue(\r\n)?/i", '', $raw));
         list($headers, $body) = explode("\r\n\r\n", $raw, 2);
         $headers = explode("\r\n", $headers);
         $body = trim($body);
