@@ -10,23 +10,16 @@ use RuntimeException;
 
 class Broker extends Component implements BrokerInterface
 {
-    protected $_curl;
     protected $_baseUrl = '';
+    protected $_timeout = 60;
+    protected $_verify = true;
+    protected $_lastInfo = [];
 
     public function __construct(string $baseUrl = '', int $timeout = 60, bool $verify = true)
     {
-        $this->_curl = curl_init();
-        curl_setopt_array($this->_curl, [
-            CURLOPT_POST => true,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_USERAGENT => 'curl',
-            CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HEADER => true,
-            CURLOPT_SSL_VERIFYPEER => $verify,
-            CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
-        ]);
         $this->setBaseUrl($baseUrl);
+        $this->_timeout = $timeout;
+        $this->_verify = $verify;
     }
 
     public function setBaseUrl(string $baseUrl): void
@@ -45,8 +38,17 @@ class Broker extends Component implements BrokerInterface
         $url = $this->_baseUrl . $url;
         $json = $this->security->serialize($data);
         $hash = $this->security->sign($json);
-        curl_setopt_array($this->_curl, [
+        $curl = curl_init();
+        curl_setopt_array($curl, [
             CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERAGENT => 'curl',
+            CURLOPT_TIMEOUT => $this->_timeout,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HEADER => true,
+            CURLOPT_SSL_VERIFYPEER => $this->_verify,
+            CURLOPT_SSL_VERIFYHOST => $this->_verify ? 2 : 0,
             CURLOPT_POSTFIELDS => $json,
             CURLOPT_HTTPHEADER => [
                 'Accept-Language: en',
@@ -54,14 +56,19 @@ class Broker extends Component implements BrokerInterface
                 'Signature: ' . $hash,
             ],
         ]);
-        $raw = curl_exec($this->_curl);
+        $raw = curl_exec($curl);
         $this->log->debug('request sent', [
             'url' => $url,
             'raw' => $raw,
         ]);
+        $this->_lastInfo = curl_getinfo($curl);
         if (!$raw) {
-            throw new RuntimeException(curl_error($this->_curl), curl_errno($this->_curl));
+            $err = curl_error($curl);
+            $code = curl_errno($curl);
+            curl_close($curl);
+            throw new RuntimeException($err, $code);
         }
+        curl_close($curl);
 
         $raw = trim(preg_replace("/^HTTP\/[\d\.]+\s+[\d]+\s+Continue(\r\n)?/i", '', $raw));
         list($headers, $body) = explode("\r\n\r\n", $raw, 2);
@@ -89,6 +96,7 @@ class Broker extends Component implements BrokerInterface
             $result = $this->security->deserialize($body);
         } catch (\Throwable $e) {
             $this->log->error($e->getMessage(), ['headers' => $headers, 'body' => $body]);
+            throw $e;
         }
 
         if (array_key_exists('errorCodes', $result)) {
@@ -99,11 +107,6 @@ class Broker extends Component implements BrokerInterface
 
     public function getTransferInfo(): array
     {
-        return curl_getinfo($this->_curl) ?: [];
-    }
-
-    public function __destruct()
-    {
-        curl_close($this->_curl);
+        return $this->_lastInfo;
     }
 }
