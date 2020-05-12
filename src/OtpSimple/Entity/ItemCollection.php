@@ -46,6 +46,10 @@ class ItemCollection
 
     public function toArray(): array
     {
-        return array_values($this->_items);
+        $r = [];
+        foreach ($this->_items as $i) {
+            $r[] = $i->toArray();
+        }
+        return $r;
     }
 }
