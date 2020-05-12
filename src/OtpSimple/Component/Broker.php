@@ -83,7 +83,11 @@ class Broker extends Component implements BrokerInterface
             }
         }
 
-        $result = $this->security->deserialize($body);
+        try {
+            $result = $this->security->deserialize($body);
+        } catch (\Throwable $e) {
+            $this->log->error($e->getMessage(), ['body' => $body]);
+        }
 
         if (array_key_exists('errorCodes', $result)) {
             throw new Exception\ApiException($result['errorCodes']);
